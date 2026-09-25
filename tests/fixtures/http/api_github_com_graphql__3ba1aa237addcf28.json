@@ -1,0 +1,36 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://api.github.com/graphql",
+    "body": "{\"query\":\"\\nquery($owner: String!, $repo: String!, $number: Int!, $before: String) {\\n  repository(owner: $owner, name: $repo) {\\n    issue(number: $number) {\\n      number state stateReason closedAt url\\n      timelineItems(last: 100, before: $before, itemTypes: [CLOSED_EVENT, REOPENED_EVENT, CROSS_REFERENCED_EVENT, CONNECTED_EVENT, MARKED_AS_DUPLICATE_EVENT]) {\\n        pageInfo { hasPreviousPage startCursor }\\n        nodes {\\n          __typename\\n          ... on ClosedEvent { createdAt closer { __typename ... on PullRequest { number title url merged mergedAt baseRefName mergeCommit { oid } repository { nameWithOwner } } ... on Commit { oid url repository { nameWithOwner } } } }\\n          ... on ReopenedEvent { createdAt }\\n          ... on CrossReferencedEvent { createdAt willCloseTarget source { __typename ... on PullRequest { number title url merged mergedAt baseRefName mergeCommit { oid } repository { nameWithOwner } } } }\\n          ... on ConnectedEvent { createdAt subject { __typename ... on PullRequest { number title url merged mergedAt baseRefName mergeCommit { oid } repository { nameWithOwner } } } }\\n          ... on MarkedAsDuplicateEvent { createdAt canonical { __typename ... on Issue { number repository { nameWithOwner } } } }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{\"owner\":\"ai\",\"repo\":\"nanoid\",\"number\":462,\"before\":null}}"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 25 Sep 2026 14:05:31 GMT",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept-Encoding, Accept, X-Requested-With",
+      "x-accepted-oauth-scopes": "repo",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "4B45:9AEC8:CC1BD:D79F4:6AB67FAA",
+      "x-oauth-client-id": "178c6fc778ccc68e1d6a",
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4971",
+      "x-ratelimit-reset": "1790348218",
+      "x-ratelimit-resource": "graphql",
+      "x-ratelimit-used": "29",
+      "x-xss-protection": "0"
+    },
+    "body": "{\"data\":{\"repository\":{\"issue\":{\"number\":462,\"state\":\"CLOSED\",\"stateReason\":\"COMPLETED\",\"closedAt\":\"2026-06-18T17:26:11Z\",\"url\":\"https://github.com/ai/nanoid/issues/462\",\"timelineItems\":{\"pageInfo\":{\"hasPreviousPage\":false,\"startCursor\":\"Y3Vyc29yOnYyOpPPAAABkOVgnugCqjE0MTAzMjQxMzY=\"},\"nodes\":[{\"__typename\":\"CrossReferencedEvent\",\"createdAt\":\"2024-07-24T15:33:53Z\",\"willCloseTarget\":false,\"source\":{\"__typename\":\"PullRequest\",\"number\":2268,\"title\":\"fix: replace nanoid\",\"url\":\"https://github.com/mondaycom/vibe/pull/2268\",\"merged\":true,\"mergedAt\":\"2024-07-25T07:40:37Z\",\"baseRefName\":\"master\",\"mergeCommit\":{\"oid\":\"03f7b9a9742c70ad2422be93d251925fb23ad37f\"},\"repository\":{\"nameWithOwner\":\"mondaycom/vibe\"}}},{\"__typename\":\"CrossReferencedEvent\",\"createdAt\":\"2025-09-03T15:39:18Z\",\"willCloseTarget\":false,\"source\":{\"__typename\":\"PullRequest\",\"number\":1420,\"title\":\"fix: update meteor sdk\",\"url\":\"https://github.com/near/wallet-selector/pull/1420\",\"merged\":true,\"mergedAt\":\"2025-09-03T16:03:31Z\",\"baseRefName\":\"main\",\"mergeCommit\":{\"oid\":\"48a475853e1c6412db3e2de920ce1e2f7ba738d8\"},\"repository\":{\"nameWithOwner\":\"near/wallet-selector\"}}},{\"__typename\":\"ClosedEvent\",\"createdAt\":\"2026-06-18T17:26:12Z\",\"closer\":null}]}}}}}"
+  }
+}

@@ -18,6 +18,17 @@ export interface PackageCandidate {
   lowSignal: boolean;
   /** What the first frame (closest to the throw) says about which copy threw. */
   copy?: FrameCopy;
+  /** Up to 3 frames inside this package, closest to the throw first. */
+  frames?: PackageFrame[];
+}
+
+/**
+ * Where in a package the error passed: `settle` in `lib/core/settle.js`.
+ * The file is relative to the package root, so it's the same on every machine.
+ */
+export interface PackageFrame {
+  fn?: string;
+  file: string;
 }
 
 /**
@@ -237,20 +248,54 @@ export function frameCopy(line: string, name: string, source: CandidateSource): 
   return installPath ? copy : undefined;
 }
 
+/**
+ * The function and in-package file of a stack frame for `name`:
+ *   "at settle (/app/node_modules/axios/lib/core/settle.js:19:34)"   → settle, lib/core/settle.js
+ *   "at Axios.request (…/.pnpm/axios@1.1.3/node_modules/axios/dist/node/axios.cjs:3496:33)"
+ *   "at AxiosError.from (file:///…/deno/npm/registry.npmjs.org/axios/1.1.3/lib/core/AxiosError.js:89:14)"
+ */
+export function packageFrame(line: string, name: string): PackageFrame | undefined {
+  const l = line.replace(/\\/g, '/');
+  if (!FRAME.test(l)) return undefined;
+  const pkg = escapeRe(name);
+  const m =
+    l.match(new RegExp(`node_modules/${pkg}/([^\\s:()'"?]+)`)) ??
+    l.match(new RegExp(`/npm/[^/]+/${pkg}/\\d+\\.\\d+\\.\\d+[^/]*/([^\\s:()'"?]+)`));
+  if (!m) return undefined;
+  // V8: "at fn (path…)" / Firefox: "fn@path…"; anonymous frames have no name.
+  // "at async new Foo.bar [as baz] (…)": the alias in brackets is optional.
+  const v8 = l.match(/^\s*at\s+(?:async\s+)?(?:new\s+)?([^\s(]+)(?:\s+\[as ([^\]]+)\])?\s+\(/);
+  // "Axios.<computed> [as get]": the computed name is the alias.
+  const fn = v8 ? (v8[2] ? v8[1]!.replace(/<computed>$/, v8[2]) : v8[1]) : l.match(/^\s*([\w$.<>]+)@/)?.[1];
+  // A module's top-level code has no function name.
+  const cleanFn = fn?.replace(/^(Object\.<anonymous>|<anonymous>)$/, '');
+  return { ...(cleanFn ? { fn: cleanFn } : {}), file: m[1]! };
+}
+
 export function extractPackages(lines: string[]): PackageCandidate[] {
   const byName = new Map<string, PackageCandidate>();
   const add = (raw: string, line: number, source: CandidateSource) => {
     const name = normalizePackageName(raw);
     if (!name) return;
     const existing = byName.get(name);
+    const frame = source === 'stack-frame' || source === 'deno-npm-cache' ? packageFrame(lines[line]!, name) : undefined;
     if (existing) {
       existing.hits++;
       // The first frame is the throw site; later ones only fill a gap.
       existing.copy ??= frameCopy(lines[line]!, name, source);
+      if (frame && (existing.frames ??= []).length < 3 && !existing.frames.some((f) => f.file === frame.file && f.fn === frame.fn)) existing.frames.push(frame);
       return;
     }
     const copy = frameCopy(lines[line]!, name, source);
-    byName.set(name, { name, hits: 1, firstLine: line, source, lowSignal: LOW_SIGNAL.some((r) => r.test(name)), ...(copy ? { copy } : {}) });
+    byName.set(name, {
+      name,
+      hits: 1,
+      firstLine: line,
+      source,
+      lowSignal: LOW_SIGNAL.some((r) => r.test(name)),
+      ...(copy ? { copy } : {}),
+      ...(frame ? { frames: [frame] } : {}),
+    });
   };
 
   lines.forEach((line, i) => {

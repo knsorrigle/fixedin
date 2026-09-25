@@ -120,7 +120,11 @@ export async function run(input: string, opts: RunOptions): Promise<RunResult> {
       // Not fatal: search may still work with the original name.
       diag.warn('resolve', `Could not check the canonical name of ${t.repo.owner}/${t.repo.repo}: ${message}`);
     }
-    const r = await searchRepo(gh, target, d.parsed, { limit: opts.limit });
+    const framePkg = d.packages.find((p) => p.candidate.name === t.packages[0]);
+    const r = await searchRepo(gh, target, d.parsed, {
+      limit: opts.limit,
+      ...(framePkg?.candidate.frames?.length ? { frames: { pkg: framePkg.candidate.name, frames: framePkg.candidate.frames } } : {}),
+    });
     const name = `${target.owner}/${target.repo}`;
     for (const a of r.attempts) {
       if (a.error) diag.warn('search', `${a.requested} search in ${name} failed: ${a.error}`, [a.q]);
@@ -209,9 +213,9 @@ async function judge(
     ...(pkg ? { packageName: pkg.name } : {}),
     ...(pkg?.installed ? { installed: pkg.installed } : {}),
   };
-  const strong = search.matches.filter((m) => m.similarity.score >= MATCH_THRESHOLD);
+  const strong = search.candidates.filter((m) => m.similarity.score >= MATCH_THRESHOLD);
   if (strong.length === 0) {
-    const best = search.matches[0];
+    const best = search.candidates[0];
     return {
       ...base,
       kind: 'NO_MATCH',
@@ -287,6 +291,7 @@ async function judge(
         const major = installedVersion ? semverMajor(installedVersion) : undefined;
         release = await findFixRelease(gh, repo, packument, trace.fix.sha, {
           ...(trace.fix.mergedAt ? { mergedAt: trace.fix.mergedAt } : {}),
+          ...(trace.fix.baseRef ? { baseRef: trace.fix.baseRef } : {}),
           ...(major !== undefined ? { floor: `${major}.0.0` } : {}),
         });
         for (const n of release.notes) diag.info('release', `${pkg.name}: ${n}`);

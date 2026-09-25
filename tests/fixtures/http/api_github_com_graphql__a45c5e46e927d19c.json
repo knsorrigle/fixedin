@@ -1,0 +1,36 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://api.github.com/graphql",
+    "body": "{\"query\":\"\\nquery($owner: String!, $repo: String!, $number: Int!, $before: String) {\\n  repository(owner: $owner, name: $repo) {\\n    issue(number: $number) {\\n      number state stateReason closedAt url\\n      timelineItems(last: 100, before: $before, itemTypes: [CLOSED_EVENT, REOPENED_EVENT, CROSS_REFERENCED_EVENT, CONNECTED_EVENT, MARKED_AS_DUPLICATE_EVENT]) {\\n        pageInfo { hasPreviousPage startCursor }\\n        nodes {\\n          __typename\\n          ... on ClosedEvent { createdAt closer { __typename ... on PullRequest { number title url merged mergedAt baseRefName mergeCommit { oid } repository { nameWithOwner } } ... on Commit { oid url repository { nameWithOwner } } } }\\n          ... on ReopenedEvent { createdAt }\\n          ... on CrossReferencedEvent { createdAt willCloseTarget source { __typename ... on PullRequest { number title url merged mergedAt baseRefName mergeCommit { oid } repository { nameWithOwner } } } }\\n          ... on ConnectedEvent { createdAt subject { __typename ... on PullRequest { number title url merged mergedAt baseRefName mergeCommit { oid } repository { nameWithOwner } } } }\\n          ... on MarkedAsDuplicateEvent { createdAt canonical { __typename ... on Issue { number repository { nameWithOwner } } } }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{\"owner\":\"vitejs\",\"repo\":\"vite\",\"number\":5020,\"before\":null}}"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 25 Sep 2026 14:06:35 GMT",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept-Encoding, Accept, X-Requested-With",
+      "x-accepted-oauth-scopes": "repo",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "4B66:39CAED:C31B5:CEC5E:6AB67FEA",
+      "x-oauth-client-id": "178c6fc778ccc68e1d6a",
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4962",
+      "x-ratelimit-reset": "1790348218",
+      "x-ratelimit-resource": "graphql",
+      "x-ratelimit-used": "38",
+      "x-xss-protection": "0"
+    },
+    "body": "{\"data\":{\"repository\":{\"issue\":{\"number\":5020,\"state\":\"CLOSED\",\"stateReason\":\"COMPLETED\",\"closedAt\":\"2021-09-23T13:59:12Z\",\"url\":\"https://github.com/vitejs/vite/issues/5020\",\"timelineItems\":{\"pageInfo\":{\"hasPreviousPage\":false,\"startCursor\":\"Y3Vyc29yOnYyOpPPAAABfBLz-4ABqjUzNTAwNTExMzE=\"},\"nodes\":[{\"__typename\":\"ClosedEvent\",\"createdAt\":\"2021-09-23T13:59:12Z\",\"closer\":null}]}}}}}"
+  }
+}

@@ -517,6 +517,41 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "frames": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "matched": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "of": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "top": {
+                                    "type": "boolean"
+                                  },
+                                  "otherTrace": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "matched",
+                                  "of",
+                                  "top",
+                                  "otherTrace"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         },
                         "required": [
@@ -524,7 +559,8 @@
                           "title",
                           "body",
                           "verbatim",
-                          "anchor"
+                          "anchor",
+                          "frames"
                         ],
                         "additionalProperties": false
                       }
@@ -970,6 +1006,13 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "purpose": {
+                      "type": "string",
+                      "enum": [
+                        "message",
+                        "frames"
+                      ]
                     }
                   },
                   "required": [
@@ -979,7 +1022,8 @@
                     "fallbackReasons",
                     "totalCount",
                     "error",
-                    "skipped"
+                    "skipped",
+                    "purpose"
                   ],
                   "additionalProperties": false
                 }
@@ -1100,6 +1144,41 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "frames": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "matched": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "of": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "top": {
+                              "type": "boolean"
+                            },
+                            "otherTrace": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "matched",
+                            "of",
+                            "top",
+                            "otherTrace"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "required": [
@@ -1107,7 +1186,8 @@
                     "title",
                     "body",
                     "verbatim",
-                    "anchor"
+                    "anchor",
+                    "frames"
                   ],
                   "additionalProperties": false
                 }

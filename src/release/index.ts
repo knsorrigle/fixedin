@@ -149,6 +149,19 @@ export function candidateVersions(p: Packument, since?: string): string[] {
     .sort(semver.compare);
 }
 
+/** How many post-merge releases, in date order, to check before calling a fix unreleased. */
+const DATE_ORDER_PROBES = 6;
+
+/**
+ * The release line a maintenance branch stands for: "v3.1" → "3.1.x",
+ * "1.x" / "v1.x" / "release-2" → "1.x" / "2.x". Mainline branches → undefined.
+ */
+export function releaseLineOf(branch: string | undefined): string | undefined {
+  const m = branch?.match(/^(?:v|release[-/]?|releases[-/])?(\d+)(?:\.(\d+|x))?(?:\.x)?$/i);
+  if (!m) return undefined;
+  return m[2] && m[2] !== 'x' ? `${m[1]}.${m[2]}.x` : `${m[1]}.x`;
+}
+
 export async function findFixRelease(
   gh: GitHub,
   repo: RepoRef,
@@ -158,6 +171,8 @@ export async function findFixRelease(
     mergedAt?: string;
     /** Ignore versions below this (e.g. `${installedMajor}.0.0`) so a backport to an old line isn't reported. */
     floor?: string;
+    /** Branch the fix was merged into; a maintenance branch ("v3.1", "1.x") pins the release line. */
+    baseRef?: string;
     checker?: ContainmentChecker;
   } = {},
 ): Promise<ReleaseResult & { checker: ContainmentChecker }> {
@@ -174,6 +189,16 @@ export async function findFixRelease(
     const before = list.length;
     list = list.filter((v) => semver.gte(v, opts.floor!));
     if (before !== list.length) notes.push(`${before - list.length} release(s) below ${opts.floor} were skipped.`);
+  }
+  // Merged into a maintenance branch: only that line can contain it (later
+  // mainline releases have usually diverged from the backport).
+  const line = releaseLineOf(opts.baseRef);
+  if (line) {
+    const onLine = list.filter((v) => semver.satisfies(v, line));
+    if (onLine.length) {
+      notes.push(`The fix was merged into ${opts.baseRef}, so only ${line} releases were searched.`);
+      list = onLine;
+    }
   }
   const considered = list.length;
 
@@ -195,6 +220,23 @@ export async function findFixRelease(
       hi = mid - 1;
     } else {
       lo = mid + 1;
+    }
+  }
+
+  // Binary search assumes containment grows with semver. A fix merged into an
+  // unrecognized maintenance branch breaks that, so before calling it
+  // unreleased, check the first releases published after the merge, by date.
+  if (!found && opts.mergedAt && packument.time) {
+    const byDate = candidateVersions(packument, opts.mergedAt)
+      .filter((v) => !checker.probes().some((p) => p.version === v))
+      .sort((a, b) => Date.parse(packument.time![a] ?? '') - Date.parse(packument.time![b] ?? ''))
+      .slice(0, DATE_ORDER_PROBES);
+    for (const v of byDate) {
+      if ((await checker.check(v)).result === 'contains') {
+        found = v;
+        notes.push(`Found in ${v} by checking releases in date order (the fix is on a branch that later releases don't include).`);
+        break;
+      }
     }
   }
 

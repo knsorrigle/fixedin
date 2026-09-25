@@ -16,7 +16,8 @@ import type { GitHub } from '../github/client.js';
 import { describeGitHubError } from '../github/client.js';
 import type { ParsedError } from '../parse/index.js';
 import type { RepoRef } from '../resolve/index.js';
-import { similarity, tokenize, type SimilarityBreakdown } from './similarity.js';
+import { extractAnchor, informative, methodName, similarity, tokenize, type SimilarityBreakdown } from './similarity.js';
+import type { PackageFrame } from '../parse/index.js';
 
 export type SearchMode = 'hybrid' | 'semantic' | 'lexical';
 
@@ -30,6 +31,8 @@ export interface SearchAttempt {
   error?: string;
   /** Not sent at all, and why (e.g. hybrid without a token). */
   skipped?: string;
+  /** Why this search ran: the message itself, or the stack frame (for messages without an identifier). */
+  purpose?: 'message' | 'frames';
 }
 
 export interface IssueMatch {
@@ -54,7 +57,10 @@ export interface RepoSearchResult {
   modeUsed: SearchMode | 'none';
   attempts: SearchAttempt[];
   totalCount: number;
+  /** Top --limit matches, for display. */
   matches: IssueMatch[];
+  /** Every scored candidate. The verdict uses these, so --limit never changes the answer. */
+  candidates: IssueMatch[];
   rateLimit?: RateLimitInfo;
 }
 
@@ -67,6 +73,8 @@ export interface RateLimitInfo {
 
 export interface SearchOptions {
   limit: number;
+  /** The package this repo publishes and its frames from the trace (closest to the throw first). */
+  frames?: { pkg: string; frames: PackageFrame[] };
 }
 
 /**
@@ -189,7 +197,23 @@ export async function searchRepo(
     }
   }
 
-  const items = (data?.items ?? []).filter((i) => !i.pull_request);
+  // No identifier in the message ("fetch failed"): search for the code path too —
+  // issues that pasted the same trace name the same function. Lexical, so it
+  // draws on the larger search quota rather than hybrid's 10/min.
+  let pool = data?.items ?? [];
+  // The first frame that identifies a code path (not the library's error plumbing).
+  const top = opts.frames?.frames.find(informative);
+  const topMethod = methodName(top?.fn);
+  if (!extractAnchor(parsed.query) && topMethod && topMethod.length >= 4) {
+    // Message words + the function, without appended error codes: lexical search
+    // ANDs every term, and an issue pasting the trace rarely repeats the code.
+    const frameData = await run('lexical', `${buildQueryText({ query: parsed.query, errorCodes: [] })} ${topMethod}`);
+    attempts.at(-1)!.purpose = 'frames';
+    const seen = new Set(pool.map((i) => i.number));
+    pool = [...pool, ...(frameData?.items ?? []).filter((i) => !seen.has(i.number))];
+  }
+
+  const items = pool.filter((i) => !i.pull_request);
   const scored = items.map((i, idx): IssueMatch => ({
     number: i.number,
     title: i.title,
@@ -202,7 +226,7 @@ export async function searchRepo(
     reactions: i.reactions?.total_count ?? 0,
     labels: i.labels.map((l) => (typeof l === 'string' ? l : (l.name ?? ''))).filter(Boolean),
     githubRank: idx + 1,
-    similarity: similarity(parsed.query, i.title, i.body),
+    similarity: similarity(parsed.query, i.title, i.body, opts.frames),
   }));
 
   // Rank by our similarity; GitHub's (semantic) order breaks ties.
@@ -214,6 +238,7 @@ export async function searchRepo(
     attempts,
     totalCount: data?.total_count ?? 0,
     matches: scored.slice(0, opts.limit),
+    candidates: scored,
     ...(rateLimit ? { rateLimit } : {}),
   };
 }

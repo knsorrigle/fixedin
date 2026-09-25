@@ -42,6 +42,12 @@ const Similarity = z.object({
    * below the match threshold. Null when the message has no recognised shape.
    */
   anchor: z.object({ term: z.string(), found: z.enum(['title', 'body', 'none']) }).nullable(),
+  /**
+   * For messages without an anchor: how the issue's pasted traces compare with ours
+   * inside the package (error-plumbing frames excluded). top = the throw-site frame
+   * matched; otherTrace = the issue shows a different path through the same package.
+   */
+  frames: z.object({ matched: z.number().int(), of: z.number().int(), top: z.boolean(), otherTrace: z.boolean() }).nullable(),
 });
 
 const Match = z.object({
@@ -95,6 +101,8 @@ const SearchAttempt = z.object({
   totalCount: z.number().int().nullable(),
   error: z.string().nullable(),
   skipped: z.string().nullable(),
+  /** "frames": the extra search by stack frame for messages without an identifier. */
+  purpose: z.enum(['message', 'frames']),
 });
 
 const DependentSchema = z.object({ name: z.string(), version: z.string(), range: z.string().nullable() });
@@ -216,7 +224,7 @@ const dependency = (r: Relation) =>
     : { kind: r.kind, via: [], chain: [], reason: r.kind === 'unknown' ? r.reason : null };
 const match = (m: RunResult['searches'][number]['matches'][number]) => ({
   ...m,
-  similarity: { ...m.similarity, anchor: m.similarity.anchor ?? null },
+  similarity: { ...m.similarity, anchor: m.similarity.anchor ?? null, frames: m.similarity.frames ?? null },
 });
 
 /** Convert an internal RunResult into the stable report, validated by the schema. */
@@ -288,6 +296,7 @@ export function toReport(r: RunResult, version: string): FixedinReport {
             totalCount: a.totalCount ?? null,
             error: a.error ?? null,
             skipped: a.skipped ?? null,
+            purpose: a.purpose ?? 'message',
           })),
         },
         matches: s.matches.map(match),

@@ -62,6 +62,84 @@ export interface SimilarityBreakdown {
    * has no recognised shape.
    */
   anchor?: { term: string; found: 'title' | 'body' | 'none' };
+  /**
+   * For messages without an anchor: how the issue's pasted stack traces compare
+   * with ours inside the same package. Absent when we have no in-package frames.
+   */
+  frames?: FrameEvidence;
+}
+
+export interface FrameEvidence {
+  /** How many of our in-package frames the issue shows. */
+  matched: number;
+  of: number;
+  /** The frame closest to the throw is among them (the strongest signal). */
+  top: boolean;
+  /** The issue pastes a trace through the same package that doesn't include our frames. */
+  otherTrace: boolean;
+}
+
+/** Score a throw-site frame match lifts an anchorless issue to, when the message overlaps too: the "strong match" line. */
+export const TOP_FRAME_FLOOR = 0.75;
+/** …and when only the frame matches: over the match threshold, but shown as weak. */
+export const WEAK_FRAME_FLOOR = 0.62;
+
+/** "chunks/dep-8f5c9b2e.js" → "chunks/dep.js": bundlers hash chunk names per build. */
+export function unhash(path: string): string {
+  // A build hash has digits or mixed case ("8f5c9b2e", "D-7EJmVm"); a word doesn't ("listener").
+  return path.replace(/[-.]([\w-]{6,20})(?=\.[cm]?js\b)/g, (m, h: string) => (/\d/.test(h) || (/[A-Z]/.test(h) && /[a-z]/.test(h)) ? '' : m));
+}
+
+/** Last two path segments, hash-stripped: what's stable across machines and builds. */
+export function fileTail(file: string): string {
+  return unhash(file).split('/').slice(-2).join('/');
+}
+
+/** "Function.AxiosError.from" / "AxiosError.from" → "from"; anonymous → undefined. */
+export function methodName(fn: string | undefined): string | undefined {
+  return fn?.split('.').filter((x) => x && !x.startsWith('<')).at(-1);
+}
+
+/**
+ * Frames that every error from a library passes through say nothing about which
+ * bug it is: error factories and reporters (AxiosError.from, handleRequestError,
+ * createError) and generic plumbing (request, emit, call).
+ */
+const PLUMBING = /(error|err|exception|throw|reject|raise|fail|assert|invariant|warn|log)/i;
+const GENERIC_METHODS = new Set(['request', 'get', 'set', 'emit', 'call', 'apply', 'run', 'next', 'then', 'handle', 'invoke', 'exec', 'execute', 'process', 'dispatch', 'from', 'wrap', 'bind', 'default', 'constructor', 'anonymous']);
+
+/** Is this frame specific enough to identify a code path? */
+export function informative(f: { fn?: string; file: string }): boolean {
+  const m = methodName(f.fn);
+  if (!m) return !BUNDLED.test(f.file); // an anonymous frame in a small source file still pins the file
+  return !PLUMBING.test(m) && !GENERIC_METHODS.has(m.toLowerCase());
+}
+
+// A frame in a single bundled file (dist/axios.cjs, runtime/library.js) says
+// little by file alone — thousands of issues share it — so it needs its function too.
+const BUNDLED = /(^|\/)(dist|build|cjs|umd|esm|runtime|chunks)\/|\.(development|production|min)\.[cm]?js$|\.cjs$/;
+
+export function frameEvidence(
+  text: string,
+  pkg: string,
+  frames: Array<{ fn?: string; file: string }>,
+): FrameEvidence | undefined {
+  const useful = frames.filter(informative);
+  if (!useful.length) return undefined;
+  const lines = unhash(text.replace(/\\/g, '/')).split(/\r?\n/);
+  const escaped = pkg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const inPkg = new RegExp(`node_modules/(\\.(pnpm|bun)/[^/]*/node_modules/)?${escaped}/|/npm/[^/]+/${escaped}/\\d+\\.\\d+\\.\\d+`);
+  const pkgLines = lines.filter((l) => inPkg.test(l));
+  const shows = (f: { fn?: string; file: string }) => {
+    const tail = fileTail(f.file);
+    const m = methodName(f.fn);
+    if (!m && BUNDLED.test(f.file)) return false;
+    const fnRe = m ? new RegExp(`(^|[^\\w$])${m.replace(/\$/g, '\\$')}([^\\w$]|$)`) : undefined;
+    return lines.some((l) => l.includes(tail) && (!fnRe || fnRe.test(l)));
+  };
+  const hits = useful.map(shows);
+  const matched = hits.filter(Boolean).length;
+  return { matched, of: useful.length, top: hits[0] ?? false, otherTrace: matched === 0 && pkgLines.length >= 2 };
 }
 
 /**
@@ -118,7 +196,12 @@ export function mentions(text: string, phrase: string): boolean {
   return false;
 }
 
-export function similarity(query: string, title: string, body: string | null | undefined): SimilarityBreakdown {
+export function similarity(
+  query: string,
+  title: string,
+  body: string | null | undefined,
+  context?: { pkg: string; frames: Array<{ fn?: string; file: string }> },
+): SimilarityBreakdown {
   const q = [...new Set(tokenize(query))];
   const b = (body ?? '').slice(0, 20_000);
   const titleCov = coverage(q, title);
@@ -143,7 +226,28 @@ export function similarity(query: string, title: string, body: string | null | u
     anchor = { term: a.term, found };
     if (found === 'none') score = Math.min(score, ANCHOR_MISS_CAP);
   }
-  return { score: round(score), title: round(titleCov), body: round(bodyCov), verbatim, ...(anchor ? { anchor } : {}) };
+  // No identifier to anchor on ("fetch failed", "connect ECONNREFUSED"): the stack
+  // trace says where it failed. Same code path → same bug; a different path
+  // through the same package → a different bug.
+  let frames: FrameEvidence | undefined;
+  if (!a && context?.frames.length) {
+    frames = frameEvidence(`${title}\n${b}`, context.pkg, context.frames);
+    // The same throw site plus a fair share of the message: a strong match. The
+    // same throw site alone: a match, but labelled weak (hubs like config loaders
+    // sit under many different errors).
+    if (frames?.top) score = Math.max(score, (Math.max(titleCov, bodyCov) >= 0.4 ? TOP_FRAME_FLOOR : WEAK_FRAME_FLOOR) + 0.05 * (frames.matched - 1));
+    else if (frames && frames.matched > 0) score += 0.05 * frames.matched;
+    else if (frames?.otherTrace) score = Math.min(score, ANCHOR_MISS_CAP);
+    score = Math.min(score, 1);
+  }
+  return {
+    score: round(score),
+    title: round(titleCov),
+    body: round(bodyCov),
+    verbatim,
+    ...(anchor ? { anchor } : {}),
+    ...(frames ? { frames } : {}),
+  };
 }
 
 function round(n: number): number {
