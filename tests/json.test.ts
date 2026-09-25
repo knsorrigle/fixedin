@@ -36,3 +36,16 @@ describe('--json report', () => {
     expect(published).toEqual(JSON.parse(JSON.stringify(z.toJSONSchema(ReportSchema))));
   });
 });
+
+describe('displayPath', () => {
+  it('shortens paths under --cwd and keeps far-away ones absolute (native separators)', async () => {
+    const { displayPath } = await import('../src/output/terminal.js');
+    const { join, resolve } = await import('node:path');
+    const cwd = resolve('proj', 'app');
+    expect(displayPath(join(cwd, 'package-lock.json'), cwd)).toBe('package-lock.json');
+    expect(displayPath(join(cwd, '..', 'package-lock.json'), cwd)).toBe(join('..', 'package-lock.json'));
+    const far = resolve(cwd, '..', '..', '..', '..', 'x', 'package-lock.json');
+    expect(displayPath(far, cwd)).toBe(far);
+    expect(displayPath('node_modules/axios', cwd)).toBe('node_modules/axios');
+  });
+});

@@ -4,7 +4,7 @@ import type { Diagnostic } from '../diagnostics.js';
 import type { NetClient } from '../net/client.js';
 import type { RunResult } from '../pipeline.js';
 import { STRONG_MATCH, type Verdict } from '../verdict/index.js';
-import { relative } from 'node:path';
+import { isAbsolute, relative } from 'node:path';
 
 export function formatDetect(r: DetectResult, cwd: string): string {
   const out: string[] = [];
@@ -60,10 +60,13 @@ export function formatDiagnostics(items: Diagnostic[], verbose: boolean): string
     .join('\n');
 }
 
-function displayPath(p: string, cwd: string): string {
-  if (!p.startsWith('/')) return p;
+/** Show paths relative to --cwd, unless that means climbing far out of it. Works with \\ and / separators. */
+export function displayPath(p: string, cwd: string): string {
+  if (!isAbsolute(p)) return p;
   const rel = relative(cwd, p);
-  return rel.startsWith('..') && rel.split('/').length > 3 ? p : rel || p;
+  if (!rel) return p;
+  const ups = rel.split(/[\\/]/).filter((s) => s === '..').length;
+  return ups > 2 ? p : rel;
 }
 
 export function formatSearches(r: RunResult): string {

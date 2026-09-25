@@ -40,6 +40,9 @@ jobs:
         shell: bash
         env:
           FIXEDIN_REPLAY: tests/fixtures/http
+          # Fixtures were recorded authenticated (hybrid search + GraphQL). Replay
+          # never sends this anywhere; it only selects the authenticated code path.
+          GITHUB_TOKEN: replay-only-not-a-real-token
         run: |
           out=$(node dist/cli.js --cwd tests/fixtures/projects/axios-1.1.3 --repo axios/axios < tests/fixtures/stacks/axios-default-create.txt)
           echo "$out"
