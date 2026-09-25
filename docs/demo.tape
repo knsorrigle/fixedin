@@ -12,7 +12,7 @@ Require node
 Set Shell "bash"
 Set FontSize 16
 Set Width 1240
-Set Height 640
+Set Height 680
 Set Padding 24
 Set Theme "Dracula"
 Set WindowBar Colorful

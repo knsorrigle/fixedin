@@ -139,6 +139,17 @@ const Result = z.object({
     workaround: Workaround.nullable(),
     /** For a transitive copy: what actually gets the fix in (refresh / upgrade the parent / override). */
     remedy: Remedy.nullable(),
+    /** The release-note / changelog lines that mention the fix. */
+    releaseNote: z
+      .object({
+        source: z.enum(['github-release', 'changelog']),
+        url: z.url(),
+        lines: z.array(z.string()),
+        matchedBy: z.enum(['pull-request', 'issue', 'commit']),
+      })
+      .nullable(),
+    /** Upgrading a direct dependency to fixedIn crosses a major version. */
+    majorUpgrade: z.object({ from: z.string(), to: z.string() }).nullable(),
   }),
   search: z.object({
     /** Mode GitHub reports it actually ran. */
@@ -263,6 +274,8 @@ export function toReport(r: RunResult, version: string): FixedinReport {
                 summary: v.remedy.summary,
               }
             : null,
+          releaseNote: v.releaseNote ?? null,
+          majorUpgrade: v.majorUpgrade ?? null,
         },
         search: {
           mode: s.modeUsed,

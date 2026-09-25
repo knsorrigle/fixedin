@@ -165,6 +165,12 @@ export function formatVerdicts(r: RunResult, cwd: string, limit: number): string
           : '';
       out.push(`    Fixed by: ${by}${shipped}${v.fix.evidence === 'referenced-pr-near-close' ? pc.dim(' (inferred: merged just before close)') : ''}`);
     }
+    if (v.releaseNote) {
+      const [first, ...more] = v.releaseNote.lines;
+      out.push(`    Release note: ${pc.italic(`"${first}"`)}`);
+      for (const line of more) out.push(`                  ${pc.italic(`"${line}"`)}`);
+      out.push(pc.dim(`                  ${v.releaseNote.url}`));
+    }
     // Shown for NO_MATCH too: it's the first thing a new bug report needs.
     if (v.packageName) {
       out.push(`    You have: ${v.installed ? formatInstalled(v.installed, v.packageName, cwd) : pc.yellow('unknown (not installed here)')}`);
@@ -181,6 +187,9 @@ export function formatVerdicts(r: RunResult, cwd: string, limit: number): string
     }
     const adviceColor = v.kind === 'FIXED_UPSTREAM_UPGRADE' ? pc.bold : (s: string) => s;
     out.push(`    → ${adviceColor(v.advice)}`);
+    if (v.majorUpgrade) {
+      out.push(pc.yellow(`      ${v.majorUpgrade.from} → ${v.majorUpgrade.to} is a major upgrade: read the release notes for breaking changes first`));
+    }
     if (v.remedy?.note && v.remedy.command) out.push(pc.dim(`      (${v.remedy.note})`));
     if (v.remedy?.override) {
       const label = v.remedy.kind === 'override' ? 'package.json:' : 'or force it in package.json:';

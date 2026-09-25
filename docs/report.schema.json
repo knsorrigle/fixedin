@@ -808,6 +808,73 @@
                     "type": "null"
                   }
                 ]
+              },
+              "releaseNote": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "github-release",
+                          "changelog"
+                        ]
+                      },
+                      "url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "lines": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "matchedBy": {
+                        "type": "string",
+                        "enum": [
+                          "pull-request",
+                          "issue",
+                          "commit"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "url",
+                      "lines",
+                      "matchedBy"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "majorUpgrade": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "from": {
+                        "type": "string"
+                      },
+                      "to": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "from",
+                      "to"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             },
             "required": [
@@ -820,7 +887,9 @@
               "latest",
               "installedHasFix",
               "workaround",
-              "remedy"
+              "remedy",
+              "releaseNote",
+              "majorUpgrade"
             ],
             "additionalProperties": false
           },

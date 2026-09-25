@@ -14,6 +14,8 @@ $ pbpaste | fixedin --repo axios/axios
     Matched: axios/axios#5011 (closed) — similarity 1.00
              [1.0.0] TypeError: Cannot read properties of undefined (reading 'create')
     Fixed by: PR #5162 → shipped in v1.2.0
+    Release note: "changed: refactored module exports #5162"
+                  https://github.com/axios/axios/releases/tag/v1.2.0
     You have: 1.1.3 (from package-lock.json)
     → Upgrade to >=1.2.0
 ```
@@ -101,7 +103,7 @@ error text ─► parse ─► lockfile ─► resolve ─► search ─► trac
 4. **search** — `GET /search/issues` with `search_type=hybrid`, scoped to `repo:<owner/name> is:issue`. GitHub reports which mode actually ran; fixedin records it and falls back to lexical search when hybrid is unavailable. Because GitHub scores every hit `1.0`, results are re-ranked locally by weighted word overlap with the title and body, with a bonus when the message appears verbatim. Most JS errors are a template around one identifier, so that identifier must appear *in the same role*: for "adapter is not a function", an issue about "setKeepAlive is not a function" is capped below the match threshold even if it mentions "adapter" elsewhere. The same goes for `reading 'X'` and "Cannot find module 'X'".
 5. **trace** — reads the issue's GraphQL timeline for the fix: the PR or commit that closed it, a linked PR, or (flagged as inferred) a same-repo PR merged just before a manual close. References from other repos — usually downstream "bump dependency" PRs — are ignored. Duplicates are followed one hop.
 6. **release** — finds the earliest npm release whose source contains the fix's merge commit. Each version maps to a commit through npm's `gitHead`, or a git tag (`v1.2.3`, `1.2.3`, `pkg@1.2.3`, …) when `gitHead` is missing. Containment is `GET /repos/{o}/{r}/compare/{fix}...{release}` (`ahead`/`identical` = contains). Versions are binary-searched, limited to releases published after the merge and on or above your major version, so it's a handful of API calls, not hundreds.
-7. **verdict** — compares with your installed version. The installed release is also checked directly against the fix commit, which beats semver when fixes are backported.
+7. **verdict** — compares with your installed version. The installed release is also checked directly against the fix commit, which beats semver when fixes are backported. It quotes the release-note line for the fix — from the GitHub release, or the project's changelog (the package's own directory in a monorepo, then the root), matched by the fix's PR, issue or commit within that version's section — and warns when the upgrade crosses a major version.
 8. **remedy** — "upgrade to >=X" only works for packages you depend on directly. When the copy that threw was pulled in by another package, fixedin finds that parent in the lockfile, reads the range it declares, and tells you what actually gets the fix in:
 
    ```

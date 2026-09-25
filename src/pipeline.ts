@@ -10,10 +10,11 @@ import type { InstalledPackage } from './lockfile/index.js';
 import { fetchPackument, findFixRelease, type Containment, type ContainmentChecker, type Packument, type ReleaseResult } from './release/index.js';
 import type { Relation } from './relation.js';
 import { packageManagerOf, planRemedy, type PackageManager } from './remedy/index.js';
+import { findReleaseNote } from './notes/index.js';
 import { ResolveError, resolveRepo, type RepoRef } from './resolve/index.js';
 import { canonicalizeRepo, searchRepo, type IssueMatch, type RepoSearchResult } from './search/index.js';
 import { traceFix, type TraceResult } from './trace/index.js';
-import { decideFixed, MATCH_THRESHOLD, pickWorkaround, type IssueComment, type Verdict } from './verdict/index.js';
+import { crossesMajor, decideFixed, MATCH_THRESHOLD, pickWorkaround, type IssueComment, type Verdict } from './verdict/index.js';
 import type { Diagnostics } from './diagnostics.js';
 import type { GitHub } from './github/client.js';
 
@@ -308,6 +309,27 @@ async function judge(
       ...(installedProbe ? { installedProbe } : {}),
     });
     if (trace.duplicateOf) v.reasons.unshift(`#${match.number} was closed as a duplicate of #${trace.duplicateOf}.`);
+
+    // What shipped: the release-note line for the fix.
+    if (v.fixedIn && pkg) {
+      const probe = release?.probes.find((p) => p.version === v.fixedIn);
+      try {
+        const { note, tried } = await findReleaseNote(gh, repo, {
+          version: v.fixedIn,
+          packageName: pkg.name,
+          ...(probe?.ref ? { ref: probe.ref, refIsTag: probe.refSource === 'tag' } : {}),
+          fix: trace.fix,
+          issueNumber: match.number,
+        });
+        if (note) v.releaseNote = note;
+        else diag.info('release', `No release note for ${pkg.name} ${v.fixedIn} mentions the fix.`, tried);
+      } catch (err) {
+        diag.warn('release', `Could not read release notes for ${pkg.name} ${v.fixedIn}: ${(err as Error).message}`);
+      }
+    }
+    if (v.kind === 'FIXED_UPSTREAM_UPGRADE' && v.fixedIn && pkg?.installed && pkg.relation.kind !== 'transitive' && crossesMajor(pkg.installed.version, v.fixedIn)) {
+      v.majorUpgrade = { from: pkg.installed.version, to: v.fixedIn };
+    }
 
     // A transitive copy can't just be "upgraded": say what actually gets the fix in.
     if (v.kind === 'FIXED_UPSTREAM_UPGRADE' && v.fixedIn && pkg?.installed && packument && pkg.relation.kind === 'transitive') {

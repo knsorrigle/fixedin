@@ -15,6 +15,7 @@ import type { IssueMatch } from '../search/index.js';
 import type { FixRef, TraceResult } from '../trace/index.js';
 import type { Relation } from '../relation.js';
 import type { Remedy } from '../remedy/index.js';
+import type { ReleaseNote } from '../notes/index.js';
 
 export type VerdictKind =
   | 'FIXED_UPSTREAM_UPGRADE'
@@ -56,6 +57,10 @@ export interface Verdict {
   relation?: Relation;
   /** For a transitive copy with a released fix: refresh, upgrade the parent, or override. */
   remedy?: Remedy;
+  /** The release-note / changelog line for the fix, when one mentions it. */
+  releaseNote?: ReleaseNote;
+  /** Set when upgrading a direct dependency to `fixedIn` crosses a major version (0.x: a minor). */
+  majorUpgrade?: { from: string; to: string };
   /** Why we reached this verdict, for --verbose and --json. */
   reasons: string[];
 }
@@ -172,4 +177,11 @@ export function pickWorkaround(comments: IssueComment[]): Workaround | undefined
     hasCode: best.hasCode,
     excerpt: best.c.body!.trim().split('\n').slice(0, 12).join('\n'),
   };
+}
+
+/** Does going from `from` to `to` cross a semver-major boundary? (For 0.x, a minor bump is major.) */
+export function crossesMajor(from: string, to: string): boolean {
+  if (!semver.valid(from) || !semver.valid(to) || semver.gte(from, to)) return false;
+  const [a, b] = [semver.parse(from)!, semver.parse(to)!];
+  return b.major > a.major || (a.major === 0 && b.minor > a.minor);
 }
