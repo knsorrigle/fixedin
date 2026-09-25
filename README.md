@@ -65,6 +65,29 @@ pbpaste | fixedin --json | jq '.results[].verdict.kind'
 | `--json` | | Stable JSON output (see [schema](#json-output)) |
 | `-v, --verbose` | | Every search query, trace step, release probe, cache hit and remaining API quota |
 | `--no-cache` | | Don't read or write `~/.cache/fixedin` |
+| `--exit-code` | | Exit **1** if a released fix exists that you don't have, **2** if fixedin couldn't tell (error, bad arguments, a search failed), else **0** |
+
+## Use in CI
+
+With `--exit-code`, fixedin's answer is usable in scripts: **1** means "this failure is already fixed upstream — upgrade", **0** means nothing to upgrade to (no match, you already have the fix, the issue is open, or the fix isn't released), **2** means fixedin couldn't tell. A found fix wins: if one repo's search fails but another finds a fix, the exit code is 1.
+
+For example, in GitHub Actions — explain a failed test run and flag failures that an upgrade would fix:
+
+```yaml
+- name: Test
+  shell: bash          # sets -o pipefail, so a failing `npm test` fails the step despite `tee`
+  run: npm test 2>&1 | tee test.log
+
+- name: Is this already fixed upstream?
+  if: failure()
+  shell: bash
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  run: |
+    status=0
+    npx fixedin --exit-code < test.log || status=$?
+    if [ "$status" = 1 ]; then echo "::warning::A released upstream fix exists for this failure — see the fixedin output above."; fi
+```
 
 ## Verdicts
 
