@@ -7,6 +7,7 @@ import { Command, CommanderError, InvalidArgumentError } from 'commander';
 import { resolve } from 'node:path';
 import pc from 'picocolors';
 import pkg from '../package.json' with { type: 'json' };
+import { resolveToken } from './github/auth.js';
 import { defaultClient, type NetClient } from './net/client.js';
 import { toReport } from './output/json.js';
 import { formatDetect, formatDiagnostics, formatNetStats, formatSearches, formatVerdicts } from './output/terminal.js';
@@ -91,7 +92,10 @@ export async function main(argv: string[], io: IO): Promise<number> {
           // Always explain waits (on stderr, so --json stays clean).
           onWait: (ms, reason) => io.stderr(pc.dim(`… ${reason}; waiting ${Math.ceil(ms / 1000)}s\n`)),
         });
-      const result = await run(input, { cwd, client, limit: opts.limit, ...(opts.repo ? { repo: opts.repo } : {}) });
+      // Token from io.env (not process.env), so main() is self-contained and tests
+      // never depend on whoever is logged into `gh` on the machine running them.
+      const auth = await resolveToken(io.env);
+      const result = await run(input, { cwd, client, limit: opts.limit, auth, ...(opts.repo ? { repo: opts.repo } : {}) });
       const stats = client.stats;
       for (const e of stats?.cache?.errors ?? []) result.detect.diagnostics.warn('net', `Cache: ${e}`);
 
