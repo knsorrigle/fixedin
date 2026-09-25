@@ -31,6 +31,10 @@ export interface InstalledPackage {
   topLevel: boolean;
   /** File the version came from, relative display path. */
   source: string;
+  /** Set by detect when a stack frame decided which copy this is. */
+  selectedBy?: 'frame-version' | 'frame-install-path';
+  /** When the chosen copy isn't the top-level one: the top-level version, for context. */
+  topLevelVersion?: string;
 }
 
 export interface LockfileReader {

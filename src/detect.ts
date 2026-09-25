@@ -14,7 +14,7 @@ import {
   type LockfileReader,
 } from './lockfile/index.js';
 import type { NetClient } from './net/client.js';
-import { parseError, type PackageCandidate, type ParsedError } from './parse/index.js';
+import { parseError, type FrameCopy, type PackageCandidate, type ParsedError } from './parse/index.js';
 import { parseGitHubUrl, ResolveError, resolveRepo, type RepoRef, type ResolvedRepo } from './resolve/index.js';
 
 export interface DetectedPackage {
@@ -37,29 +37,95 @@ export interface DetectResult {
   lookupInstalled: (name: string) => { installed?: InstalledPackage; otherCopies: InstalledPackage[] };
 }
 
-/** Lockfile first, then node_modules (capped at the lockfile's directory). Warns when not found. */
+/** Every known copy of `name`: lockfile first, then node_modules (capped at the lockfile's directory). */
+function findCopies(
+  cwd: string,
+  reader: LockfileReader | undefined,
+  name: string,
+  diagnostics: Diagnostics,
+): { copies: InstalledPackage[]; tried: string[] } {
+  const copies = reader?.find(name) ?? [];
+  if (copies.length) return { copies, tried: [] };
+  const nm = findInNodeModules(cwd, name, reader ? dirname(reader.file) : undefined);
+  if (nm.found) {
+    if (reader) diagnostics.info('lockfile', `${name} is not in ${reader.file}; using ${nm.found.source}.`);
+    return { copies: [nm.found], tried: [] };
+  }
+  return { copies: [], tried: reader ? [`${reader.file} (no entry)`, ...nm.tried] : nm.tried };
+}
+
+function notInstalledWarning(name: string, reader: LockfileReader | undefined, tried: string[], diagnostics: Diagnostics) {
+  diagnostics.warn(
+    'lockfile',
+    `${name} is not installed in this project${reader ? ` (not in ${basename(reader.file)} or node_modules)` : ''}; its version can't be compared. Wrong --cwd?`,
+    tried,
+  );
+}
+
+/** Top-level copy (what the app itself loads). Warns when nothing is found. */
 export function lookupInstalled(
   cwd: string,
   reader: LockfileReader | undefined,
   name: string,
   diagnostics: Diagnostics,
 ): { installed?: InstalledPackage; otherCopies: InstalledPackage[] } {
-  const copies = reader?.find(name) ?? [];
-  if (copies.length) {
-    return { installed: copies[0]!, otherCopies: copies.slice(1).filter((c) => c.version !== copies[0]!.version) };
+  const { copies, tried } = findCopies(cwd, reader, name, diagnostics);
+  if (!copies.length) {
+    notInstalledWarning(name, reader, tried, diagnostics);
+    return { otherCopies: [] };
   }
-  const nm = findInNodeModules(cwd, name, reader ? dirname(reader.file) : undefined);
-  if (nm.found) {
-    if (reader) diagnostics.info('lockfile', `${name} is not in ${reader.file}; using ${nm.found.source}.`);
-    return { installed: nm.found, otherCopies: [] };
+  return { installed: copies[0]!, otherCopies: copies.slice(1).filter((c) => c.version !== copies[0]!.version) };
+}
+
+const norm = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '');
+
+/**
+ * Pick the copy the stack trace actually ran, not just the hoisted one:
+ *   1. a version embedded in the frame path (pnpm/bun store, yarn zip cache, Deno cache)
+ *   2. the frame's install path matched against lockfile locations (longest wins,
+ *      so ".../wait-on/node_modules/axios" beats "node_modules/axios")
+ *   3. the top-level copy
+ */
+export function selectCopy(
+  name: string,
+  frame: FrameCopy | undefined,
+  copies: InstalledPackage[],
+): InstalledPackage | undefined {
+  const top = copies[0];
+  const mark = (c: InstalledPackage, selectedBy: InstalledPackage['selectedBy']): InstalledPackage => ({
+    ...c,
+    ...(selectedBy ? { selectedBy } : {}),
+    ...(top && top.version !== c.version ? { topLevelVersion: top.version } : {}),
+  });
+
+  if (frame?.version) {
+    const same = copies.filter((c) => c.version === frame.version);
+    const byPath = frame.installPath ? same.find((c) => norm(frame.installPath!).endsWith(`/${norm(c.location)}`)) : undefined;
+    const hit = byPath ?? same[0];
+    if (hit) return mark(hit, 'frame-version');
+    // Not in the lockfile (or no lockfile at all): the path itself is the evidence.
+    return mark(
+      {
+        name,
+        version: frame.version,
+        location: frame.installPath ?? `(${frame.versionFrom} path)`,
+        topLevel: false,
+        source: frame.installPath ?? 'stack trace',
+      },
+      'frame-version',
+    );
   }
-  const where = reader ? [`${reader.file} (no entry)`, ...nm.tried] : nm.tried;
-  diagnostics.warn(
-    'lockfile',
-    `${name} is not installed in this project${reader ? ` (not in ${basename(reader.file)} or node_modules)` : ''}; its version can't be compared. Wrong --cwd?`,
-    where,
-  );
-  return { otherCopies: [] };
+
+  if (frame?.installPath) {
+    const path = norm(frame.installPath);
+    const matches = copies.filter((c) => {
+      const loc = norm(c.location);
+      return path === loc || path.endsWith(`/${loc}`);
+    });
+    const best = matches.sort((a, b) => b.location.length - a.location.length)[0];
+    if (best && best !== top) return mark(best, 'frame-install-path');
+  }
+  return top;
 }
 
 export interface DetectOptions {
@@ -119,9 +185,22 @@ export async function detect(input: string, opts: DetectOptions): Promise<Detect
     selected.map(async (candidate): Promise<DetectedPackage> => {
       const det: DetectedPackage = { candidate, otherCopies: [] };
 
-      const found = lookupInstalled(opts.cwd, reader, candidate.name, diagnostics);
-      if (found.installed) det.installed = found.installed;
-      det.otherCopies = found.otherCopies;
+      const { copies, tried } = findCopies(opts.cwd, reader, candidate.name, diagnostics);
+      const chosen = selectCopy(candidate.name, candidate.copy, copies);
+      if (chosen) {
+        det.installed = chosen;
+        det.otherCopies = copies.filter((c) => c.version !== chosen.version);
+        if (chosen.selectedBy) {
+          diagnostics.info(
+            'lockfile',
+            `${candidate.name}: using ${chosen.version} at ${chosen.location}, the copy the stack trace ran${
+              chosen.topLevelVersion ? ` (the top-level copy is ${chosen.topLevelVersion})` : ''
+            }.`,
+          );
+        }
+      } else {
+        notInstalledWarning(candidate.name, reader, tried, diagnostics);
+      }
 
       if (!explicitRepo) {
         try {

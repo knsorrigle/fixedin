@@ -16,6 +16,24 @@ export interface PackageCandidate {
   source: CandidateSource;
   /** Test runners, bundlers etc. that show up in almost every trace. */
   lowSignal: boolean;
+  /** What the first frame (closest to the throw) says about which copy threw. */
+  copy?: FrameCopy;
+}
+
+/**
+ * The installed copy a stack frame points at.
+ *   installPath: "/app/node_modules/wait-on/node_modules/axios" — matched against
+ *                lockfile install locations to find a nested copy.
+ *   version:     embedded by some installers, so no lockfile is needed:
+ *                pnpm   node_modules/.pnpm/axios@1.1.3_…/node_modules/axios
+ *                bun    node_modules/.bun/axios@1.1.3/node_modules/axios
+ *                yarn   .yarn/cache/axios-npm-1.1.3-<hash>-<hash>.zip/node_modules/axios
+ *                deno   …/npm/registry.npmjs.org/axios/1.1.3/
+ */
+export interface FrameCopy {
+  installPath?: string;
+  version?: string;
+  versionFrom?: 'pnpm' | 'bun' | 'yarn-cache' | 'deno-cache';
 }
 
 export interface ParsedError {
@@ -69,7 +87,8 @@ const VITE_DEP = /node_modules[\\/]\.vite[\\/]deps[\\/]([^\\/\s:?()'"]+?)\.[mc]?
  * A registry host segment followed by a version segment keeps this specific.
  */
 const DENO_NPM_CACHE =
-  /[\\/]npm[\\/][a-z0-9.-]+\.[a-z]{2,}(?::\d+)?[\\/]((?:@[^\\/\s:()'"]+[\\/])?[^\\/\s:()'"]+)[\\/]\d+\.\d+\.\d+[^\\/\s]*[\\/]/;
+  /[\\/]npm[\\/][a-z0-9.-]+\.[a-z]{2,}(?::\d+)?[\\/]((?:@[^\\/\s:()'"]+[\\/])?[^\\/\s:()'"]+)[\\/](\d+\.\d+\.\d+[^\\/\s]*)[\\/]/;
+const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 const MODULE_NOT_FOUND = [
   /Cannot find module ['"]([^'"]+)['"]/,
   /Can't resolve ['"]([^'"]+)['"]/,
@@ -172,6 +191,52 @@ export function extractErrorCodes(text: string): string[] {
   return [...found];
 }
 
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Install path of `name` in a frame: everything up to and including ".../node_modules/<name>". */
+export function installPathIn(line: string, name: string): string | undefined {
+  const l = line.replace(/\\/g, '/');
+  const marker = `node_modules/${name}`;
+  let end = -1;
+  for (let i = l.indexOf(marker); i !== -1; i = l.indexOf(marker, i + 1)) {
+    const after = l[i + marker.length];
+    if (after === undefined || after === '/' || after === ':' || after === ')') end = i + marker.length;
+  }
+  if (end === -1) return undefined;
+  const head = l.slice(0, end);
+  const start = Math.max(head.lastIndexOf('('), head.lastIndexOf(' '), head.lastIndexOf('"'), head.lastIndexOf("'")) + 1;
+  return head
+    .slice(start)
+    .replace(/^webpack-internal:\/\/\//, '') // relative: "webpack-internal:///./node_modules/x"
+    .replace(/^file:\/\//, '')
+    .replace(/^\/([A-Za-z]:\/)/, '$1'); // file:///C:/… → C:/…
+}
+
+/** What a frame says about which copy of `name` it ran. */
+export function frameCopy(line: string, name: string, source: CandidateSource): FrameCopy | undefined {
+  const l = line.replace(/\\/g, '/');
+  if (source === 'deno-npm-cache') {
+    const m = l.match(DENO_NPM_CACHE);
+    const v = m?.[2];
+    return v && SEMVER.test(v) ? { version: v, versionFrom: 'deno-cache' } : undefined;
+  }
+  if (source !== 'stack-frame') return undefined;
+  const installPath = installPathIn(line, name);
+  const copy: FrameCopy = installPath ? { installPath } : {};
+
+  // pnpm / bun virtual store: ".pnpm/@scope+pkg@1.2.3_peer@4.5.6/node_modules/@scope/pkg"
+  const store = installPath?.match(new RegExp(`/node_modules/\\.(pnpm|bun)/([^/]+)/node_modules/${escapeRe(name)}$`));
+  const enc = name.replace('/', '+');
+  if (store && store[2]!.startsWith(`${enc}@`)) {
+    const v = store[2]!.slice(enc.length + 1).split(/[_(]/)[0]!;
+    if (SEMVER.test(v)) return { ...copy, version: v, versionFrom: store[1] === 'pnpm' ? 'pnpm' : 'bun' };
+  }
+  // yarn Berry zip cache: "@scope-pkg-npm-1.2.3-0123456789-abcdef0123.zip/node_modules/@scope/pkg/"
+  const zip = l.match(new RegExp(`/${escapeRe(name.replace('/', '-'))}-npm-([^/]+?)-[0-9a-f]{10}(?:-[0-9a-f]{10})?\\.zip/node_modules/${escapeRe(name)}/`));
+  if (zip && SEMVER.test(zip[1]!)) return { ...copy, version: zip[1]!, versionFrom: 'yarn-cache' };
+  return installPath ? copy : undefined;
+}
+
 export function extractPackages(lines: string[]): PackageCandidate[] {
   const byName = new Map<string, PackageCandidate>();
   const add = (raw: string, line: number, source: CandidateSource) => {
@@ -180,9 +245,12 @@ export function extractPackages(lines: string[]): PackageCandidate[] {
     const existing = byName.get(name);
     if (existing) {
       existing.hits++;
+      // The first frame is the throw site; later ones only fill a gap.
+      existing.copy ??= frameCopy(lines[line]!, name, source);
       return;
     }
-    byName.set(name, { name, hits: 1, firstLine: line, source, lowSignal: LOW_SIGNAL.some((r) => r.test(name)) });
+    const copy = frameCopy(lines[line]!, name, source);
+    byName.set(name, { name, hits: 1, firstLine: line, source, lowSignal: LOW_SIGNAL.some((r) => r.test(name)), ...(copy ? { copy } : {}) });
   };
 
   lines.forEach((line, i) => {

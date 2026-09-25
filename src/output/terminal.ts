@@ -1,6 +1,7 @@
 import pc from 'picocolors';
 import type { DetectResult } from '../detect.js';
 import type { Diagnostic } from '../diagnostics.js';
+import type { InstalledPackage } from '../lockfile/index.js';
 import type { NetClient } from '../net/client.js';
 import type { RunResult } from '../pipeline.js';
 import { STRONG_MATCH, type Verdict } from '../verdict/index.js';
@@ -58,6 +59,20 @@ export function formatDiagnostics(items: Diagnostic[], verbose: boolean): string
       return lines.join('\n');
     })
     .join('\n');
+}
+
+/**
+ * "1.1.3 (from package-lock.json)", or for a copy picked from the stack trace:
+ * "0.25.0 at node_modules/wait-on/node_modules/axios (from package-lock.json) — the copy in the stack trace; top-level axios is 1.1.3"
+ */
+function formatInstalled(i: InstalledPackage, name: string | undefined, cwd: string): string {
+  const fromPath = i.source === i.location;
+  const where = i.selectedBy && !i.topLevel ? ` at ${displayPath(i.location, cwd)}` : '';
+  const from = fromPath ? pc.dim('(read from the stack trace path)') : pc.dim(`(from ${displayPath(i.source, cwd)})`);
+  const why = i.selectedBy
+    ? pc.dim(` — the copy in the stack trace${i.topLevelVersion ? `; top-level ${name ?? i.name} is ${i.topLevelVersion}` : ''}`)
+    : '';
+  return `${i.version}${where} ${from}${why}`;
 }
 
 /** Show paths relative to --cwd, unless that means climbing far out of it. Works with \\ and / separators. */
@@ -151,9 +166,7 @@ export function formatVerdicts(r: RunResult, cwd: string, limit: number): string
       out.push(`    Fixed by: ${by}${shipped}${v.fix.evidence === 'referenced-pr-near-close' ? pc.dim(' (inferred: merged just before close)') : ''}`);
     }
     if (v.packageName && v.kind !== 'NO_MATCH') {
-      out.push(
-        `    You have: ${v.installed ? `${v.installed.version} ${pc.dim(`(from ${displayPath(v.installed.source, cwd)})`)}` : pc.yellow('unknown (not installed here)')}`,
-      );
+      out.push(`    You have: ${v.installed ? formatInstalled(v.installed, v.packageName, cwd) : pc.yellow('unknown (not installed here)')}`);
     }
     if (v.workaround) {
       out.push(`    Workaround: ${pc.cyan(v.workaround.url)} ${pc.dim(`by @${v.workaround.author}, ${v.workaround.reactions} 👍`)}`);

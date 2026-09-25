@@ -1,0 +1,9 @@
+TypeError: adapter is not a function
+    at dispatchRequest (/Users/dev/shop-api/node_modules/wait-on/node_modules/axios/lib/core/dispatchRequest.js:58:10)
+    at Axios.request (/Users/dev/shop-api/node_modules/wait-on/node_modules/axios/lib/core/Axios.js:112:15)
+    at Axios.<computed> [as get] (/Users/dev/shop-api/node_modules/wait-on/node_modules/axios/lib/core/Axios.js:136:17)
+    at wrap [as get] (/Users/dev/shop-api/node_modules/wait-on/node_modules/axios/lib/helpers/bind.js:9:15)
+    at Object.<anonymous> (/Users/dev/shop-api/crash.cjs:3:13)
+    at Module._compile (node:internal/modules/cjs/loader:1829:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1969:10)
+    at Module.load (node:internal/modules/cjs/loader:1552:32)

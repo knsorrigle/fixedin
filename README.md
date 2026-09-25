@@ -91,6 +91,8 @@ error text ─► parse ─► lockfile ─► resolve ─► search ─► trac
    | `bun.lock` | 0–2 (Bun 1.1.39+); the binary `bun.lockb` is detected and fixedin says how to convert it |
    | `deno.lock` | 3–5 (Deno 1.40+), npm packages only |
 
+   **The copy that threw wins.** When a stack frame shows which copy ran, fixedin uses that copy, not the top-level one, and says so ("0.25.0 at node_modules/wait-on/node_modules/axios — the copy in the stack trace; top-level axios is 1.1.3"). Nested npm paths are matched against the lockfile; pnpm, Bun, yarn PnP and Deno paths embed the version, so those work even without a lockfile.
+
    `npm:` aliases resolve to the real package. In a workspace, the package containing `--cwd` decides which version counts, so `packages/web` and `packages/api` can get different verdicts for the same error. No YAML or JSONC library is involved: small readers handle exactly what each tool writes, and fail with a line number or reason on anything else.
 3. **resolve** — maps each package to its GitHub repo via the `repository` field on npm (handles `git+https`, `github:` shorthand, ssh URLs and monorepo `directory`), then asks GitHub for the repo's current name (search doesn't follow renames, e.g. `prisma/prisma` → `prisma/orm`).
 4. **search** — `GET /search/issues` with `search_type=hybrid`, scoped to `repo:<owner/name> is:issue`. GitHub reports which mode actually ran; fixedin records it and falls back to lexical search when hybrid is unavailable. Because GitHub scores every hit `1.0`, results are re-ranked locally by weighted word overlap with the title and body, with a bonus when the message appears verbatim.

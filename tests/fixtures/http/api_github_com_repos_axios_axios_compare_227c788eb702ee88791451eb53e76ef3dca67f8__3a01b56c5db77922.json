@@ -1,0 +1,40 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.github.com/repos/axios/axios/compare/227c788eb702ee88791451eb53e76ef3dca67f8a...ee1aa2654766c70215c5ef40991dc1079aa261da?per_page=1"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "cache-control": "private, max-age=60, s-maxage=60",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 25 Sep 2026 10:45:02 GMT",
+      "etag": "W/\"155196c70a17ab22192de3acac21e58f5605cc9f9eefe094ac47e0275027c750\"",
+      "last-modified": "Sun, 13 Sep 2026 16:32:38 GMT",
+      "link": "<https://api.github.com/repositories/23088740/compare/227c788eb702ee88791451eb53e76ef3dca67f8a...ee1aa2654766c70215c5ef40991dc1079aa261da?per_page=1&page=86>; rel=\"last\", <https://api.github.com/repositories/23088740/compare/227c788eb702ee88791451eb53e76ef3dca67f8a...ee1aa2654766c70215c5ef40991dc1079aa261da?per_page=1&page=2>; rel=\"next\", <https://api.github.com/repositories/23088740/compare/227c788eb702ee88791451eb53e76ef3dca67f8a...ee1aa2654766c70215c5ef40991dc1079aa261da?per_page=1&page=1>; rel=\"first\"",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
+      "x-accepted-oauth-scopes": "",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-api-version-selected": "2022-11-28",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "31AF:35F0FF:A63632:AC8DB5:6AB650AE",
+      "x-oauth-client-id": "178c6fc778ccc68e1d6a",
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4993",
+      "x-ratelimit-reset": "1790336143",
+      "x-ratelimit-resource": "core",
+      "x-ratelimit-used": "7",
+      "x-xss-protection": "0"
+    },
+    "body": "{\"status\":\"diverged\",\"ahead_by\":86,\"behind_by\":876,\"total_commits\":86}"
+  }
+}

@@ -132,12 +132,38 @@
                   },
                   "source": {
                     "type": "string"
+                  },
+                  "topLevel": {
+                    "type": "boolean"
+                  },
+                  "selectedBy": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "frame-version",
+                          "frame-install-path"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "topLevelVersion": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
                   "version",
                   "location",
-                  "source"
+                  "source",
+                  "topLevel",
+                  "selectedBy",
+                  "topLevelVersion"
                 ],
                 "additionalProperties": false
               },
@@ -235,12 +261,38 @@
                   },
                   "source": {
                     "type": "string"
+                  },
+                  "topLevel": {
+                    "type": "boolean"
+                  },
+                  "selectedBy": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "frame-version",
+                          "frame-install-path"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "topLevelVersion": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
                   "version",
                   "location",
-                  "source"
+                  "source",
+                  "topLevel",
+                  "selectedBy",
+                  "topLevelVersion"
                 ],
                 "additionalProperties": false
               },

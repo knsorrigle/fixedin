@@ -4,6 +4,7 @@
  * consumers. Additive changes keep schemaVersion; breaking ones bump it.
  */
 import { z } from 'zod';
+import type { InstalledPackage } from '../lockfile/index.js';
 import type { RunResult } from '../pipeline.js';
 
 export const SCHEMA_VERSION = 1;
@@ -17,10 +18,16 @@ const Repo = z.object({
 
 const Installed = z.object({
   version: z.string(),
-  /** e.g. "node_modules/axios" */
+  /** e.g. "node_modules/axios" or "node_modules/wait-on/node_modules/axios" */
   location: z.string(),
-  /** File the version was read from. */
+  /** File the version was read from (or the stack-trace path, when that's the only evidence). */
   source: z.string(),
+  /** Hoisted to the top-level node_modules. */
+  topLevel: z.boolean(),
+  /** How a stack frame chose this copy; null = the top-level copy by default. */
+  selectedBy: z.enum(['frame-version', 'frame-install-path']).nullable(),
+  /** When this isn't the top-level copy: the top-level version. */
+  topLevelVersion: z.string().nullable(),
 });
 
 const Similarity = z.object({
@@ -147,8 +154,17 @@ export type ReportResult = z.infer<typeof Result>;
 export type VerdictKind = z.infer<typeof VerdictKindSchema>;
 
 const repo = (r: { owner: string; repo: string; directory?: string }) => ({ owner: r.owner, repo: r.repo, directory: r.directory ?? null });
-const installed = (i?: { version: string; location: string; source: string }) =>
-  i ? { version: i.version, location: i.location, source: i.source } : null;
+const installed = (i?: InstalledPackage) =>
+  i
+    ? {
+        version: i.version,
+        location: i.location,
+        source: i.source,
+        topLevel: i.topLevel,
+        selectedBy: i.selectedBy ?? null,
+        topLevelVersion: i.topLevelVersion ?? null,
+      }
+    : null;
 const match = (m: RunResult['searches'][number]['matches'][number]) => ({ ...m, similarity: { ...m.similarity } });
 
 /** Convert an internal RunResult into the stable report, validated by the schema. */

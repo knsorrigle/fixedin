@@ -1,0 +1,40 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.github.com/repos/axios/axios/compare/227c788eb702ee88791451eb53e76ef3dca67f8a...63dfce85ab8d598a934e7e32b68f94cb73a2eb4e?per_page=1"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "cache-control": "private, max-age=60, s-maxage=60",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 25 Sep 2026 10:45:03 GMT",
+      "etag": "W/\"d4861d63684a398a739977c468b7ae3f67535738eb93c0ed2da005a2fa91f2e7\"",
+      "last-modified": "Mon, 15 Jun 2026 12:20:25 GMT",
+      "link": "<https://api.github.com/repositories/23088740/compare/227c788eb702ee88791451eb53e76ef3dca67f8a...63dfce85ab8d598a934e7e32b68f94cb73a2eb4e?per_page=1&page=1>; rel=\"first\"",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
+      "x-accepted-oauth-scopes": "",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-api-version-selected": "2022-11-28",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "31AF:35F0FF:A637EA:AC8F80:6AB650AE",
+      "x-oauth-client-id": "178c6fc778ccc68e1d6a",
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4992",
+      "x-ratelimit-reset": "1790336143",
+      "x-ratelimit-resource": "core",
+      "x-ratelimit-used": "8",
+      "x-xss-protection": "0"
+    },
+    "body": "{\"status\":\"behind\",\"ahead_by\":0,\"behind_by\":1016,\"total_commits\":0}"
+  }
+}

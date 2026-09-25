@@ -66,7 +66,6 @@ For failure paths you can't record on demand (rate limits, 5xx), use a stub fetc
 
 ## Good first contributions
 
-- Use the install path to pick the copy that actually threw. Today fixedin takes only the package name from a stack frame and reports the hoisted version from the lockfile. But frames often say more: pnpm (`.pnpm/axios@1.1.3/`) and Deno (`npm/registry.npmjs.org/axios/1.1.3/`) embed the version, and nested npm paths (`node_modules/wait-on/node_modules/axios/`) match a specific lockfile entry — see the `npm6-v1` fixture, where that copy is 0.25.0, not the hoisted 1.1.3.
 - Lockfiles from real projects that fixedin misreads — the pnpm/yarn YAML reader (`src/lockfile/yaml.ts`) and Bun's JSONC handling (`stripJsonc` in `src/lockfile/bun.ts`) only accept what those tools write, and fail loudly on anything else.
 - More real-world stack traces in `tests/fixtures/stacks/` with parser expectations in `tests/parse.test.ts`.
 - New tag patterns in `TAG_PATTERNS` (`src/release/index.ts`) for repos whose release tags we don't recognise yet.
