@@ -50,34 +50,43 @@ jobs:
             for (const d of r.diagnostics) console.log('diag', d.level, d.stage, d.message.slice(0, 160));
           "
 
-  probe-write:
-    # Same search, straight from the API, with this workflow's permissions.
+  probe-pr-write:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
     steps:
-      - name: Search with pull-requests write
+      - name: Search variants
         env:
           GH_TOKEN: ${{ github.token }}
+          LABEL: pr-write
         run: |
-          for mode in hybrid lexical; do
-            extra=(); [ "$mode" = hybrid ] && extra=(-f search_type=hybrid)
-            gh api -X GET search/issues -f q="repo:axios/axios is:issue Cannot read properties of undefined reading 'create'" -f per_page=5 "${extra[@]}" \
-              --jq '"'"$mode"': total \(.total_count), items \(.items | length), mode \(.search_type // "n/a"): " + ([.items[].number] | tostring)'
+          base="repo:axios/axios Cannot read properties of undefined reading 'create'"
+          for qual in "is:issue" "type:issue" "is:issue -is:pr"; do
+            for mode in hybrid lexical; do
+              extra=(); [ "$mode" = hybrid ] && extra=(-f search_type=hybrid)
+              gh api -X GET search/issues -f q="$base $qual" -f per_page=5 "${extra[@]}" \
+                --jq '"'"$LABEL | $qual | $mode"': total \(.total_count), PRs \([.items[] | select(.pull_request)] | length)/\(.items | length): " + ([.items[].number] | tostring)' || echo "$LABEL | $qual | $mode: request failed"
+            done
           done
 
-  probe-read:
+  probe-pr-write-issues-read:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: write
+      issues: read
     steps:
-      - name: Search with contents read only
+      - name: Search variants
         env:
           GH_TOKEN: ${{ github.token }}
+          LABEL: pr-write+issues-read
         run: |
-          for mode in hybrid lexical; do
-            extra=(); [ "$mode" = hybrid ] && extra=(-f search_type=hybrid)
-            gh api -X GET search/issues -f q="repo:axios/axios is:issue Cannot read properties of undefined reading 'create'" -f per_page=5 "${extra[@]}" \
-              --jq '"'"$mode"': total \(.total_count), items \(.items | length), mode \(.search_type // "n/a"): " + ([.items[].number] | tostring)'
+          base="repo:axios/axios Cannot read properties of undefined reading 'create'"
+          for qual in "is:issue" "type:issue" "is:issue -is:pr"; do
+            for mode in hybrid lexical; do
+              extra=(); [ "$mode" = hybrid ] && extra=(-f search_type=hybrid)
+              gh api -X GET search/issues -f q="$base $qual" -f per_page=5 "${extra[@]}" \
+                --jq '"'"$LABEL | $qual | $mode"': total \(.total_count), PRs \([.items[] | select(.pull_request)] | length)/\(.items | length): " + ([.items[].number] | tostring)' || echo "$LABEL | $qual | $mode: request failed"
+            done
           done
