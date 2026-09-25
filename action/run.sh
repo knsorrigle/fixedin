@@ -9,27 +9,47 @@ fail() { echo "::error title=fixedin::$1"; exit 2; }
 # Which fixedin to run: an explicit version; else this repo's own build (the
 # action's self-test); else the npm release matching this action's ref, so a
 # newer fixedin never changes what an older action tag does.
+out="${RUNNER_TEMP:-/tmp}/fixedin"
+mkdir -p "$out"
+
+# Install into a private prefix rather than `npx fixedin@x`: inside a project
+# whose own package is named "fixedin" (this repo), npx runs that project's
+# bin instead of the published package.
+install_fixedin() {
+  npm install --prefix "$out/pkg" --no-save --no-audit --no-fund --loglevel=error "fixedin@$1" >&2 \
+    || fail "couldn't install fixedin@$1 from npm"
+  cmd=(node "$out/pkg/node_modules/fixedin/dist/cli.js")
+}
 if [ -n "$INPUT_VERSION" ]; then
-  cmd=(npx --yes "fixedin@$INPUT_VERSION")
+  install_fixedin "$INPUT_VERSION"
 elif [ -f "$ACTION_PATH/dist/cli.js" ]; then
   cmd=(node "$ACTION_PATH/dist/cli.js")
 else
   version=$(node -p "require(process.env.ACTION_PATH + '/package.json').version") || fail "can't read this action's version"
-  cmd=(npx --yes "fixedin@$version")
+  install_fixedin "$version"
 fi
-echo "Running: ${cmd[*]}"
+# An older fixedin exits 1 on the unknown --exit-code flag — which would read as
+# "a fix is available". Refuse versions without what this action needs.
+"${cmd[@]}" --help 2>/dev/null | grep -q -- '--markdown' \
+  || fail "fixedin $("${cmd[@]}" --version 2>/dev/null || echo '?') is too old for this action (needs >= 0.6.0 for --exit-code and --markdown)"
+echo "Running fixedin $("${cmd[@]}" --version) (${cmd[*]})"
 
 args=(--cwd "$INPUT_WORKING_DIRECTORY")
 [ -n "$INPUT_REPO" ] && args+=(--repo "$INPUT_REPO")
 
-out="${RUNNER_TEMP:-/tmp}/fixedin"
-mkdir -p "$out"
 report="$out/report.json"
 markdown="$out/report.md"
 
 # Diagnostics go to stderr, i.e. the job log.
 "${cmd[@]}" "${args[@]}" --json --exit-code < "$INPUT_LOG" > "$report"
 code=$?
+# --exit-code only ever returns 0, 1 or 2; anything else means fixedin didn't
+# run at all (not installed, crashed). Never let that pass as success.
+if [ "$code" != 0 ] && [ "$code" != 1 ] && [ "$code" != 2 ]; then
+  echo "exit-code=2" >> "$GITHUB_OUTPUT"
+  echo "fix-available=false" >> "$GITHUB_OUTPUT"
+  fail "fixedin didn't run (exit $code) — see the log above."
+fi
 # Second pass for markdown; GitHub responses come from fixedin's disk cache.
 "${cmd[@]}" "${args[@]}" --markdown < "$INPUT_LOG" > "$markdown" 2>/dev/null || true
 
@@ -53,6 +73,9 @@ esac
 pr=""
 if [ -n "${GITHUB_EVENT_PATH:-}" ] && [ -f "$GITHUB_EVENT_PATH" ]; then
   pr=$(jq -r '.pull_request.number // empty' "$GITHUB_EVENT_PATH")
+fi
+if [ "$INPUT_COMMENT" = "true" ] && [ -n "$pr" ] && [ ! -s "$markdown" ]; then
+  echo "::warning title=fixedin::No report to comment on #$pr — the markdown pass produced nothing (see the log above)."
 fi
 if [ "$INPUT_COMMENT" = "true" ] && [ -n "$pr" ] && [ -s "$markdown" ]; then
   existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$pr/comments" --paginate \

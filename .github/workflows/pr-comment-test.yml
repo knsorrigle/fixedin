@@ -25,7 +25,9 @@ jobs:
 
       - name: Already fixed upstream?
         if: failure()
-        uses: knsorrigle/fixedin@v0.6.0
+        # This branch's own action, unbuilt: installs fixedin from npm exactly as
+        # a released tag would, but with the fixed action/run.sh.
+        uses: ./
         with:
           log: test.log
           working-directory: tests/fixtures/projects/axios-1.1.3
