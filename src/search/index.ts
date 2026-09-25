@@ -83,6 +83,9 @@ export interface SearchOptions {
  */
 const PER_PAGE = 20;
 
+export const ONLY_PULL_REQUESTS =
+  'GitHub returned only pull requests for an is:issue search: the token can read pull requests but not issues. In GitHub Actions, add `issues: read` to the workflow permissions; for a fine-grained token, grant read access to Issues.';
+
 /** GitHub rejects q longer than 256 characters. */
 const MAX_Q = 256;
 
@@ -164,6 +167,13 @@ export async function searchRepo(
       });
       rateLimit = readRateLimit(res.headers as Record<string, string | undefined>) ?? rateLimit;
       const data = res.data as unknown as SearchResponse;
+      // A token that can see pull requests but not issues (in Actions:
+      // `pull-requests: write` without `issues: read`) gets only PRs back, even
+      // for an is:issue search. That's a failed search, not "no matching issue".
+      if (data.items.length > 0 && data.items.every((i) => i.pull_request)) {
+        attempt.error = ONLY_PULL_REQUESTS;
+        return undefined;
+      }
       attempt.used = data.search_type ?? 'lexical';
       attempt.totalCount = data.total_count;
       if (data.lexical_fallback_reason?.length) attempt.fallbackReasons = data.lexical_fallback_reason;

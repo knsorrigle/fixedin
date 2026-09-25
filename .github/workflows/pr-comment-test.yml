@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  issues: read          # without it, search returns only pull requests
   pull-requests: write
 
 jobs:

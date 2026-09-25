@@ -16,7 +16,7 @@ inputs:
     description: 'Search this GitHub repo (owner/name) instead of detecting packages from the stack trace.'
     default: ''
   comment:
-    description: 'Comment the verdict on the pull request, updating fixedin''s previous comment ("true"/"false"). Needs `pull-requests: write`.'
+    description: 'Comment the verdict on the pull request, updating fixedin''s previous comment ("true"/"false"). Needs `pull-requests: write` and `issues: read` (without issues read, GitHub''s search returns only pull requests).'
     default: 'true'
   fail-on-fix:
     description: 'Fail this step when a released fix exists that the project doesn''t have ("true"/"false").'

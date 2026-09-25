@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { resolveToken } from '../src/github/auth.js';
 import { createGitHub } from '../src/github/client.js';
 import { createClient, type FetchLike } from '../src/net/client.js';
-import { buildQueryText, composeQ, readRateLimit, relaxedQueryText, searchRepo } from '../src/search/index.js';
+import { buildQueryText, composeQ, ONLY_PULL_REQUESTS, readRateLimit, relaxedQueryText, searchRepo } from '../src/search/index.js';
 import { ANCHOR_MISS_CAP, extractAnchor, mentions, normalizeMessage, similarity, tokenize } from '../src/search/similarity.js';
 import { MATCH_THRESHOLD } from '../src/verdict/index.js';
 
@@ -220,6 +220,16 @@ describe('searchRepo strategy', () => {
     expect(urls).toHaveLength(1);
     expect(r.attempts[0]).toMatchObject({ requested: 'hybrid', skipped: expect.stringMatching(/token/) });
     expect(r.matches.map((m) => m.number)).toEqual([1]);
+  });
+
+  it('a search that returns only pull requests failed (token without issues access), not "no match"', async () => {
+    // Real behaviour: GitHub Actions token with pull-requests: write but no issues: read.
+    const pr = (n: number) => ({ ...item(n, `fix: something #${n}`), pull_request: { url: 'x' } });
+    const { fetch } = stubFetch(() => ({ status: 200, body: { total_count: 9, search_type: 'hybrid', items: [pr(11242), pr(11154)] } }));
+    const r = await searchRepo(createGitHub(createClient(fetch), 'tok'), axios, parsed, { limit: 5 });
+    expect(r.modeUsed).toBe('none');
+    expect(r.attempts.map((a) => a.error)).toEqual([ONLY_PULL_REQUESTS, ONLY_PULL_REQUESTS]);
+    expect(ONLY_PULL_REQUESTS).toMatch(/issues: read/);
   });
 
   it('reports mode "none" when every attempt fails', async () => {
