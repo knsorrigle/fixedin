@@ -83,16 +83,11 @@ describe('locateLockfile', () => {
     expect(tried[0]).toBe(join(dir, 'packages/web/package-lock.json'));
   });
 
-  it('detects pnpm and yarn but reports them as not yet supported', () => {
-    for (const [file, kind] of [
-      ['pnpm-lock.yaml', 'pnpm'],
-      ['yarn.lock', 'yarn'],
-    ] as const) {
-      const dir = tmp({ [file]: '' });
-      const { found } = locateLockfile(dir);
-      expect(found?.kind).toBe(kind);
-      expect(() => openLockfile(found!)).toThrow(/not implemented yet/);
-    }
+  it('detects yarn.lock but reports it as not yet supported', () => {
+    const dir = tmp({ 'yarn.lock': '' });
+    const { found } = locateLockfile(dir);
+    expect(found?.kind).toBe('yarn');
+    expect(() => openLockfile(found!)).toThrow(/not implemented yet/);
   });
 });
 

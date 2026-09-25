@@ -96,7 +96,7 @@ export async function detect(input: string, opts: DetectOptions): Promise<Detect
     diagnostics.warn('lockfile', `No lockfile found from ${opts.cwd} upward; will read node_modules/*/package.json instead.`, tried);
   } else {
     try {
-      reader = openLockfile(found);
+      reader = openLockfile(found, opts.cwd);
     } catch (err) {
       if (!(err instanceof LockfileError)) throw err;
       diagnostics.warn('lockfile', err.message, err.tried);

@@ -1,12 +1,16 @@
 /**
  * lockfile/: figure out which version of a package is actually installed.
  *
- * Implemented: package-lock.json / npm-shrinkwrap.json (lockfileVersion 2 & 3).
- * Stubbed:     pnpm-lock.yaml, yarn.lock — detected, but reported as unsupported.
+ * Implemented: package-lock.json / npm-shrinkwrap.json (lockfileVersion 2 & 3),
+ *              pnpm-lock.yaml (lockfileVersion 5.x, 6.0, 9.0 — see ./pnpm.ts).
+ * Stubbed:     yarn.lock — detected, but reported as unsupported.
  * Fallback:    node_modules/<pkg>/package.json when no supported lockfile exists.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { readPnpmLock } from './pnpm.js';
+
+export { readPnpmLock, parsePnpmLock } from './pnpm.js';
 
 export type LockfileKind = 'package-lock' | 'pnpm' | 'yarn';
 
@@ -69,12 +73,13 @@ export function locateLockfile(cwd: string): { found?: LocatedLockfile; tried: s
   }
 }
 
-export function openLockfile(loc: LocatedLockfile): LockfileReader {
+/** `cwd` picks the workspace importer in pnpm lockfiles (which package you're running from). */
+export function openLockfile(loc: LocatedLockfile, cwd?: string): LockfileReader {
   switch (loc.kind) {
     case 'package-lock':
       return readPackageLock(loc.path);
     case 'pnpm':
-      return readPnpmLock(loc.path);
+      return readPnpmLock(loc.path, cwd);
     case 'yarn':
       return readYarnLock(loc.path);
   }
@@ -131,19 +136,12 @@ export function parsePackageLock(json: PackageLockJson, path: string): LockfileR
 }
 
 // ---------------------------------------------------------------------------
-// Stubs — the interface is final, the parsers are not written yet.
+// yarn.lock — stubbed; the interface is final, the parser is not written yet.
 // ---------------------------------------------------------------------------
-
-export function readPnpmLock(path: string): LockfileReader {
-  throw new LockfileError(
-    `Found ${path}, but pnpm-lock.yaml parsing is not implemented yet (npm package-lock.json only in v1). Falling back to node_modules.`,
-    [path],
-  );
-}
 
 export function readYarnLock(path: string): LockfileReader {
   throw new LockfileError(
-    `Found ${path}, but yarn.lock parsing is not implemented yet (npm package-lock.json only in v1). Falling back to node_modules.`,
+    `Found ${path}, but yarn.lock parsing is not implemented yet (package-lock.json and pnpm-lock.yaml are supported). Falling back to node_modules.`,
     [path],
   );
 }
