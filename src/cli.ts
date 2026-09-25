@@ -2,9 +2,9 @@
 import { Command, InvalidArgumentError } from 'commander';
 import { resolve } from 'node:path';
 import pc from 'picocolors';
-import { detect } from './detect.js';
+import { run } from './pipeline.js';
 import { defaultClient } from './net/client.js';
-import { formatDetect, formatDiagnostics } from './output/terminal.js';
+import { formatDetect, formatDiagnostics, formatSearches } from './output/terminal.js';
 
 interface CliOptions {
   cwd: string;
@@ -43,16 +43,23 @@ const program = new Command()
     }
 
     const cwd = resolve(opts.cwd);
-    const result = await detect(input, { cwd, client: defaultClient(), repo: opts.repo });
+    const result = await run(input, {
+      cwd,
+      client: defaultClient(),
+      limit: opts.limit,
+      ...(opts.repo ? { repo: opts.repo } : {}),
+    });
+    const diagnostics = result.detect.diagnostics.items;
 
     if (opts.json) {
       // Interim shape; the stable zod schema lands in M4.
-      const { diagnostics, ...rest } = result;
-      process.stdout.write(JSON.stringify({ ...rest, diagnostics: diagnostics.items }, null, 2) + '\n');
+      const { diagnostics: _d, ...detectRest } = result.detect;
+      process.stdout.write(JSON.stringify({ ...result, detect: detectRest, diagnostics }, null, 2) + '\n');
       return;
     }
-    console.log(formatDetect(result, cwd));
-    const diag = formatDiagnostics(result.diagnostics.items, opts.verbose);
+    console.log(formatDetect(result.detect, cwd));
+    console.log(formatSearches(result));
+    const diag = formatDiagnostics(diagnostics, opts.verbose);
     if (diag) console.error('\n' + diag);
   });
 

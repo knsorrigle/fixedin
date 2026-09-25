@@ -1,6 +1,7 @@
 import pc from 'picocolors';
 import type { DetectResult } from '../detect.js';
 import type { Diagnostic } from '../diagnostics.js';
+import type { RunResult } from '../pipeline.js';
 import { relative } from 'node:path';
 
 export function formatDetect(r: DetectResult, cwd: string): string {
@@ -49,7 +50,8 @@ export function formatDiagnostics(items: Diagnostic[], verbose: boolean): string
       if (d.tried?.length && (verbose || d.level === 'error')) {
         for (const t of d.tried) lines.push(pc.dim(`      tried: ${t}`));
       } else if (d.tried?.length) {
-        lines.push(pc.dim(`      (tried ${d.tried.length} location${d.tried.length === 1 ? '' : 's'}; --verbose to list)`));
+        const noun = d.stage === 'lockfile' ? 'location' : 'attempt';
+        lines.push(pc.dim(`      (${d.tried.length} ${noun}${d.tried.length === 1 ? '' : 's'} tried; --verbose to list)`));
       }
       return lines.join('\n');
     })
@@ -60,4 +62,44 @@ function displayPath(p: string, cwd: string): string {
   if (!p.startsWith('/')) return p;
   const rel = relative(cwd, p);
   return rel.startsWith('..') && rel.split('/').length > 3 ? p : rel || p;
+}
+
+export function formatSearches(r: RunResult): string {
+  const out: string[] = [];
+  for (const s of r.searches) {
+    const installed = s.packages
+      .map((name) => r.detect.packages.find((p) => p.candidate.name === name))
+      .map((p) => (p ? `${p.candidate.name}${p.installed ? ` ${p.installed.version}` : ''}` : ''))
+      .filter(Boolean)
+      .join(', ');
+    const mode = s.modeUsed === 'hybrid' ? pc.green('hybrid') : s.modeUsed === 'none' ? pc.red('failed') : pc.yellow(s.modeUsed);
+    out.push('');
+    out.push(
+      `${pc.bold(pc.cyan(`${s.repo.owner}/${s.repo.repo}`))}${installed ? pc.dim(` (${installed})`) : ''} · ${mode} search · ${s.totalCount} result${s.totalCount === 1 ? '' : 's'}`,
+    );
+    if (s.matches.length === 0) {
+      out.push(pc.dim('  no matching issues'));
+      continue;
+    }
+    const numWidth = Math.max(...s.matches.map((m) => String(m.number).length)) + 1;
+    for (const m of s.matches) {
+      const sim = m.similarity.score.toFixed(2);
+      const simColored = m.similarity.score >= 0.7 ? pc.green(sim) : m.similarity.score >= 0.45 ? pc.yellow(sim) : pc.dim(sim);
+      const state =
+        m.state === 'open'
+          ? pc.yellow('open    ')
+          : m.stateReason === 'not_planned'
+            ? pc.dim('wontfix ')
+            : m.stateReason === 'duplicate'
+              ? pc.dim('dup     ')
+              : pc.green('closed  ');
+      const title = m.title.length > 72 ? `${m.title.slice(0, 71)}…` : m.title;
+      const extra = [m.similarity.verbatim ? 'verbatim' : '', m.reactions ? `${m.reactions} reactions` : ''].filter(Boolean);
+      out.push(
+        `  ${simColored}  ${pc.bold(`#${m.number}`.padEnd(numWidth))}  ${state}${title}${extra.length ? pc.dim(`  ${extra.join(', ')}`) : ''}`,
+      );
+      out.push(pc.dim(`        ${m.url}`));
+    }
+  }
+  return out.join('\n');
 }
