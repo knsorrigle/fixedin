@@ -71,6 +71,17 @@ For failure paths you can't record on demand (rate limits, 5xx), use a stub fetc
 - More real-world stack traces in `tests/fixtures/stacks/` with parser expectations in `tests/parse.test.ts`.
 - New tag patterns in `TAG_PATTERNS` (`src/release/index.ts`) for repos whose release tags we don't recognise yet.
 
+## Demo GIF
+
+`docs/demo.gif` (shown at the top of the README) is recorded from [`docs/demo.tape`](docs/demo.tape) with [vhs](https://github.com/charmbracelet/vhs):
+
+```bash
+brew install vhs     # once; also installs ttyd and ffmpeg
+npm run demo:gif     # builds, then records docs/demo.gif
+```
+
+The tape replays the recorded fixtures (the real axios/axios#5011 case), so re-recording needs no network or token and produces the same output every time. Re-record when the terminal output format changes.
+
 ## Releasing (maintainers)
 
 Releases are published to npm by [`.github/workflows/release.yml`](.github/workflows/release.yml) when a version tag is pushed. It uses npm trusted publishing, so no npm token is stored in the repo, and every release carries a provenance attestation linking it to the commit and workflow run that built it.

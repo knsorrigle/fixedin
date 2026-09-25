@@ -37,7 +37,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "schema": "npm run build && node scripts/schema.mjs",
-    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
+    "demo:gif": "npm run build && vhs docs/demo.tape"
   },
   "keywords": [
     "cli",

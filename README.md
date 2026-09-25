@@ -5,7 +5,6 @@
 
 **Paste an error. Find out if it was already fixed upstream, in which release, and whether _your_ installed version has the fix.**
 
-<!-- TODO: record a demo GIF (e.g. with vhs or asciinema + agg) and save it as docs/demo.gif -->
 ![fixedin demo](docs/demo.gif)
 
 ```
