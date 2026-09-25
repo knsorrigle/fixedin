@@ -43,6 +43,11 @@ describe('verdicts end-to-end (recorded)', () => {
     expect(out).toContain('→ Upgrade to >=1.2.0');
   });
 
+  it('FIXED_UPSTREAM_UPGRADE from an npm 6 (lockfileVersion 1) project', async () => {
+    const r = await run(stack('axios-default-create'), { cwd: project('npm6-v1'), client, limit: 5, auth, repo: 'axios/axios' });
+    expect(r.verdicts[0]).toMatchObject({ kind: 'FIXED_UPSTREAM_UPGRADE', installed: { version: '1.1.3', location: 'node_modules/axios' }, fixedIn: '1.2.0' });
+  });
+
   it('ALREADY_HAVE_FIX: axios 1.5.0 already contains the fix → probably a different bug', async () => {
     const r = await run(stack('axios-default-create'), { cwd: project('axios-app'), client, limit: 5, auth, repo: 'axios/axios' });
     expect(r.verdicts[0]).toMatchObject({

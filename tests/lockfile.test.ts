@@ -7,6 +7,7 @@ import {
   locateLockfile,
   LockfileError,
   openLockfile,
+  flattenV1,
   parsePackageLock,
   readPackageLock,
 } from '../src/lockfile/index.js';
@@ -65,8 +66,73 @@ describe('package-lock.json', () => {
     expect(lock.find('@acme/ui')[0]!.version).toBe('2.1.0');
   });
 
-  it('rejects lockfileVersion 1 with a remedy', () => {
-    expect(() => parsePackageLock({ lockfileVersion: 1 }, 'package-lock.json')).toThrow(/npm install --package-lock-only/);
+  it('finds aliased packages by their real name (real npm 10 lockfile)', () => {
+    // "node_modules/string-width-cjs": { "name": "string-width", "version": "4.2.3" }
+    const r = readPackageLock(join(import.meta.dirname, 'fixtures/projects/npm-alias-v3/package-lock.json'));
+    expect(r.find('string-width')).toEqual([expect.objectContaining({ version: '4.2.3', location: 'node_modules/string-width-cjs', topLevel: true })]);
+    expect(r.find('string-width-cjs')).toEqual([]);
+  });
+
+  it('ignores the root and workspace-folder entries (only install locations count)', () => {
+    const r = parsePackageLock(
+      {
+        lockfileVersion: 3,
+        packages: {
+          '': { name: 'app', version: '1.0.0' },
+          'packages/ui': { name: '@acme/ui', version: '2.1.0' },
+          'node_modules/@acme/ui': { resolved: 'packages/ui', link: true },
+        },
+      },
+      'package-lock.json',
+    );
+    expect(r.find('@acme/ui').map((p) => p.location)).toEqual(['node_modules/@acme/ui']);
+    expect(r.find('app')).toEqual([]);
+  });
+
+  it('rejects a lockfile with neither packages nor dependencies', () => {
+    expect(() => parsePackageLock({ lockfileVersion: 2 }, 'package-lock.json')).toThrow(/no "packages" or "dependencies" section; fixedin reads versions 1–3/);
+  });
+});
+
+describe('package-lock.json lockfileVersion 1 (npm 6)', () => {
+  // Real lockfile from `npm@6.14.18 install --package-lock-only`: wait-on@6 pulls in a nested axios 0.25.
+  const v1 = () => readPackageLock(join(import.meta.dirname, 'fixtures/projects/npm6-v1/package-lock.json'));
+
+  it('reads the hoisted copy first and nested copies after it', () => {
+    expect(v1().find('axios').map((p) => [p.version, p.location, p.topLevel])).toEqual([
+      ['1.1.3', 'node_modules/axios', true],
+      ['0.25.0', 'node_modules/wait-on/node_modules/axios', false],
+    ]);
+  });
+
+  it('handles scoped, dev, aliased and file: dependencies', () => {
+    const r = v1();
+    expect(r.find('@tanstack/react-query')[0]!.version).toBe('5.0.0');
+    expect(r.find('semver')[0]!.version).toBe('7.8.5'); // "dev": true
+    expect(r.find('string-width')[0]).toMatchObject({ version: '4.2.3', location: 'node_modules/string-width-cjs' }); // npm:string-width@4.2.3
+    expect(r.find('@local/ui')[0]!.version).toBe('2.1.0'); // file:local-ui → its package.json
+  });
+
+  it('flattenV1 builds v2-style install paths', () => {
+    expect(
+      flattenV1({ a: { version: '1.0.0', dependencies: { b: { version: '2.0.0', dependencies: { '@s/c': { version: '3.0.0' } } } } } }, '/x'),
+    ).toEqual({
+      'node_modules/a': { version: '1.0.0' },
+      'node_modules/a/node_modules/b': { version: '2.0.0' },
+      'node_modules/a/node_modules/b/node_modules/@s/c': { version: '3.0.0' },
+    });
+  });
+
+  it('accepts a v1 lockfile with no dependencies', () => {
+    expect(parsePackageLock({ lockfileVersion: 1 }, 'package-lock.json').find('axios')).toEqual([]);
+  });
+
+  it('prefers "packages" when a v2 lockfile carries both sections', () => {
+    const r = parsePackageLock(
+      { lockfileVersion: 2, packages: { 'node_modules/axios': { version: '1.5.0' } }, dependencies: { axios: { version: '0.0.1' } } },
+      'package-lock.json',
+    );
+    expect(r.find('axios').map((p) => p.version)).toEqual(['1.5.0']);
   });
 
   it('reports unparseable JSON with the path', () => {

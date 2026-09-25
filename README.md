@@ -81,7 +81,17 @@ error text ─► parse ─► lockfile ─► resolve ─► search ─► trac
 ```
 
 1. **parse** — picks the error line, strips paths / line:col / hex addresses / UUIDs / IPs, extracts error codes (`ERR_*`, errno codes, Prisma `P####`), and collects packages from `node_modules/<pkg>/` stack frames (including pnpm and Vite's `.vite/deps` paths), Deno's npm cache paths (`…/deno/npm/registry.npmjs.org/<pkg>/<version>/`) and "Cannot find module" messages. Test-runner frames (jest, vitest, …) are ranked last.
-2. **lockfile** — reads the installed version from `package-lock.json` (v2/v3), `pnpm-lock.yaml` (pnpm 7+, lockfile versions 5.x/6.0/9.0) `yarn.lock` (classic yarn 1 and Berry yarn 2+, including `npm:` aliases and yarn catalogs) `bun.lock` (Bun 1.1.39+) or `deno.lock` (Deno 1.40+, npm packages only), falling back to `node_modules/<pkg>/package.json`. Bun's older binary `bun.lockb` can't be read; fixedin says how to convert it. In a workspace, the package containing `--cwd` decides which version counts, so `packages/web` and `packages/api` can get different verdicts for the same error. No YAML or JSONC library is involved: small readers handle exactly what pnpm, yarn, Bun and Deno write, and fail with a line number or reason on anything else.
+2. **lockfile** — reads the installed version from the nearest lockfile, falling back to `node_modules/<pkg>/package.json`:
+
+   | Lockfile | Versions |
+   |---|---|
+   | `package-lock.json` / `npm-shrinkwrap.json` | lockfileVersion 1–3 (npm 5+) |
+   | `pnpm-lock.yaml` | 5.x, 6.0, 9.0 (pnpm 7+) |
+   | `yarn.lock` | classic (yarn 1) and Berry (yarn 2+), including yarn catalogs |
+   | `bun.lock` | 0–2 (Bun 1.1.39+); the binary `bun.lockb` is detected and fixedin says how to convert it |
+   | `deno.lock` | 3–5 (Deno 1.40+), npm packages only |
+
+   `npm:` aliases resolve to the real package. In a workspace, the package containing `--cwd` decides which version counts, so `packages/web` and `packages/api` can get different verdicts for the same error. No YAML or JSONC library is involved: small readers handle exactly what each tool writes, and fail with a line number or reason on anything else.
 3. **resolve** — maps each package to its GitHub repo via the `repository` field on npm (handles `git+https`, `github:` shorthand, ssh URLs and monorepo `directory`), then asks GitHub for the repo's current name (search doesn't follow renames, e.g. `prisma/prisma` → `prisma/orm`).
 4. **search** — `GET /search/issues` with `search_type=hybrid`, scoped to `repo:<owner/name> is:issue`. GitHub reports which mode actually ran; fixedin records it and falls back to lexical search when hybrid is unavailable. Because GitHub scores every hit `1.0`, results are re-ranked locally by weighted word overlap with the title and body, with a bonus when the message appears verbatim.
 5. **trace** — reads the issue's GraphQL timeline for the fix: the PR or commit that closed it, a linked PR, or (flagged as inferred) a same-repo PR merged just before a manual close. References from other repos — usually downstream "bump dependency" PRs — are ignored. Duplicates are followed one hop.
@@ -129,7 +139,7 @@ Every optional field is present as `null` rather than omitted. Additive changes 
 
 ## Limitations
 
-- npm packages only in v1 (via `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock` or `deno.lock`). Deno's `jsr:` and URL imports aren't checked. Not read yet: npm 6's `lockfileVersion: 1` and Bun's binary `bun.lockb` — fixedin says which it found and falls back to `node_modules`.
+- npm packages only in v1. Deno's `jsr:` and URL imports aren't checked, and Bun's binary `bun.lockb` isn't read (fixedin says so and falls back to `node_modules`).
 - Errors thrown from your own code have no `node_modules/` frames, so fixedin can't guess the package — use `--repo`.
 - The similarity score is word overlap, not semantic understanding. Common messages ("Unique constraint failed", "fetch failed") match many unrelated issues; watch for the *weak match* label.
 - The release search assumes containment is monotonic in semver order after the merge date. Cherry-picked backports can break that; the direct check of your installed version guards the verdict itself.
