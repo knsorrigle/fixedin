@@ -1,0 +1,805 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "tool": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "fixedin"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "input": {
+      "type": "object",
+      "properties": {
+        "messageLine": {
+          "type": "string"
+        },
+        "query": {
+          "type": "string"
+        },
+        "errorCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "messageLine",
+        "query",
+        "errorCodes"
+      ],
+      "additionalProperties": false
+    },
+    "lockfile": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "package-lock",
+                "pnpm",
+                "yarn"
+              ]
+            },
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "path"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": [
+            "GITHUB_TOKEN",
+            "GH_TOKEN",
+            "gh auth token",
+            "none"
+          ]
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "hits": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "stack-frame",
+              "vite-deps",
+              "module-not-found"
+            ]
+          },
+          "lowSignal": {
+            "type": "boolean"
+          },
+          "installed": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "version",
+                  "location",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "repo": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "owner": {
+                    "type": "string"
+                  },
+                  "repo": {
+                    "type": "string"
+                  },
+                  "directory": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "owner",
+                  "repo",
+                  "directory"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "hits",
+          "source",
+          "lowSignal",
+          "installed",
+          "repo"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "object",
+            "properties": {
+              "owner": {
+                "type": "string"
+              },
+              "repo": {
+                "type": "string"
+              },
+              "directory": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "owner",
+              "repo",
+              "directory"
+            ],
+            "additionalProperties": false
+          },
+          "package": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "installed": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "version",
+                  "location",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "verdict": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "FIXED_UPSTREAM_UPGRADE",
+                  "ALREADY_HAVE_FIX",
+                  "FIX_UNRELEASED",
+                  "OPEN_ISSUE",
+                  "CLOSED_NO_FIX_FOUND",
+                  "NO_MATCH"
+                ]
+              },
+              "advice": {
+                "type": "string"
+              },
+              "reasons": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "match": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "number": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "open",
+                          "closed"
+                        ]
+                      },
+                      "stateReason": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      },
+                      "closedAt": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "comments": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "reactions": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "labels": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "githubRank": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "similarity": {
+                        "type": "object",
+                        "properties": {
+                          "score": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "title": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "body": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "verbatim": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "score",
+                          "title",
+                          "body",
+                          "verbatim"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "number",
+                      "title",
+                      "url",
+                      "state",
+                      "stateReason",
+                      "createdAt",
+                      "closedAt",
+                      "comments",
+                      "reactions",
+                      "labels",
+                      "githubRank",
+                      "similarity"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "fix": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "pull_request",
+                          "commit"
+                        ]
+                      },
+                      "number": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "title": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "sha": {
+                        "type": "string"
+                      },
+                      "mergedAt": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "baseRef": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "evidence": {
+                        "type": "string",
+                        "enum": [
+                          "closed-by-pr",
+                          "closed-by-commit",
+                          "linked-pr",
+                          "referenced-pr-near-close"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "number",
+                      "title",
+                      "url",
+                      "sha",
+                      "mergedAt",
+                      "baseRef",
+                      "evidence"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "fixedIn": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "latest": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "installedHasFix": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "contains",
+                      "missing",
+                      "unknown"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "workaround": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "author": {
+                        "type": "string"
+                      },
+                      "reactions": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "hasCode": {
+                        "type": "boolean"
+                      },
+                      "excerpt": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "url",
+                      "author",
+                      "reactions",
+                      "hasCode",
+                      "excerpt"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "advice",
+              "reasons",
+              "match",
+              "fix",
+              "fixedIn",
+              "latest",
+              "installedHasFix",
+              "workaround"
+            ],
+            "additionalProperties": false
+          },
+          "search": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "hybrid",
+                  "semantic",
+                  "lexical",
+                  "none"
+                ]
+              },
+              "totalCount": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "attempts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "requested": {
+                      "type": "string",
+                      "enum": [
+                        "hybrid",
+                        "semantic",
+                        "lexical"
+                      ]
+                    },
+                    "q": {
+                      "type": "string"
+                    },
+                    "used": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "hybrid",
+                            "semantic",
+                            "lexical"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "fallbackReasons": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "totalCount": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "error": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "skipped": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "requested",
+                    "q",
+                    "used",
+                    "fallbackReasons",
+                    "totalCount",
+                    "error",
+                    "skipped"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "mode",
+              "totalCount",
+              "attempts"
+            ],
+            "additionalProperties": false
+          },
+          "matches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "number": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "title": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "closed"
+                  ]
+                },
+                "stateReason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "closedAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "comments": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "reactions": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "labels": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "githubRank": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "similarity": {
+                  "type": "object",
+                  "properties": {
+                    "score": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "title": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "body": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "verbatim": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "score",
+                    "title",
+                    "body",
+                    "verbatim"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "number",
+                "title",
+                "url",
+                "state",
+                "stateReason",
+                "createdAt",
+                "closedAt",
+                "comments",
+                "reactions",
+                "labels",
+                "githubRank",
+                "similarity"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "repo",
+          "package",
+          "installed",
+          "verdict",
+          "search",
+          "matches"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "string",
+            "enum": [
+              "info",
+              "warn",
+              "error"
+            ]
+          },
+          "stage": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "tried": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "level",
+          "stage",
+          "message",
+          "tried"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "tool",
+    "input",
+    "lockfile",
+    "auth",
+    "packages",
+    "results",
+    "diagnostics"
+  ],
+  "additionalProperties": false
+}

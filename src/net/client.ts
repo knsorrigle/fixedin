@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { cachingFetch, defaultCacheDir, type CacheStats } from './cache.js';
+import { rateLimitedFetch, type QuotaInfo } from './ratelimit.js';
 
 /**
  * Every network call in fixedin goes through a `NetClient`. Octokit is handed
@@ -13,6 +15,8 @@ export interface NetClient {
   fetch: FetchLike;
   /** Fetch JSON with a clear error on non-2xx. */
   getJson<T = unknown>(url: string, init?: RequestInit): Promise<T>;
+  /** Present on the default client: cache counters and latest GitHub quotas. */
+  stats?: { cache?: CacheStats; quotas: Map<string, QuotaInfo>; cacheDir?: string };
 }
 
 export class HttpError extends Error {
@@ -26,9 +30,10 @@ export class HttpError extends Error {
   }
 }
 
-export function createClient(fetchImpl: FetchLike): NetClient {
+export function createClient(fetchImpl: FetchLike, stats?: NetClient['stats']): NetClient {
   return {
     fetch: fetchImpl,
+    ...(stats ? { stats } : {}),
     async getJson<T>(url: string, init?: RequestInit): Promise<T> {
       let res: Response;
       try {
@@ -141,13 +146,30 @@ export function replayFetch(dir: string): FetchLike {
   };
 }
 
+export interface DefaultClientOptions {
+  /** Skip the disk cache entirely (--no-cache). */
+  noCache?: boolean;
+  onWait?: (ms: number, reason: string) => void;
+  onCacheHit?: (url: string) => void;
+}
+
 /**
- * Default client for the CLI. `FIXEDIN_RECORD=<dir>` records all traffic;
- * `FIXEDIN_REPLAY=<dir>` serves only from recordings (used by e2e tests).
+ * Default client for the CLI:  cache → rate limiting → (recording) → fetch.
+ *
+ * `FIXEDIN_RECORD=<dir>` records real traffic as fixtures (cache bypassed, so
+ * every response is fresh). `FIXEDIN_REPLAY=<dir>` serves only recordings and
+ * never touches the cache — that's what tests use.
  */
-export function defaultClient(env: NodeJS.ProcessEnv = process.env): NetClient {
+export function defaultClient(env: NodeJS.ProcessEnv = process.env, opts: DefaultClientOptions = {}): NetClient {
+  if (env.FIXEDIN_REPLAY) return createClient(replayFetch(env.FIXEDIN_REPLAY));
+
   let f: FetchLike = globalThis.fetch.bind(globalThis);
-  if (env.FIXEDIN_REPLAY) f = replayFetch(env.FIXEDIN_REPLAY);
-  else if (env.FIXEDIN_RECORD) f = recordingFetch(f, env.FIXEDIN_RECORD);
-  return createClient(f);
+  if (env.FIXEDIN_RECORD) f = recordingFetch(f, env.FIXEDIN_RECORD);
+  const limiter = rateLimitedFetch(f, { ...(opts.onWait ? { onWait: opts.onWait } : {}) });
+  f = limiter.fetch;
+
+  if (opts.noCache || env.FIXEDIN_RECORD || env.FIXEDIN_NO_CACHE) return createClient(f, { quotas: limiter.quotas });
+  const cacheDir = defaultCacheDir(env);
+  const cache = cachingFetch(f, cacheDir, { ...(opts.onCacheHit ? { onHit: opts.onCacheHit } : {}) });
+  return createClient(cache.fetch, { cache: cache.stats, quotas: limiter.quotas, cacheDir });
 }

@@ -1,0 +1,47 @@
+name: Bug report
+description: fixedin crashed, printed something wrong, or behaved unexpectedly (not a wrong verdict)
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and output
+      description: The command you ran and its full output with `--verbose`. Remove any tokens or private paths.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+  - type: input
+    id: version
+    attributes:
+      label: fixedin version
+      description: "`fixedin --version`"
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version and OS
+      placeholder: "Node 22.12.0, macOS 15"
+    validations:
+      required: true
+  - type: dropdown
+    id: lockfile
+    attributes:
+      label: Lockfile
+      options: [package-lock.json, pnpm-lock.yaml, yarn.lock, none]
+  - type: dropdown
+    id: auth
+    attributes:
+      label: GitHub token
+      description: Shown in `--verbose` output as "Using GitHub token from …"
+      options: [GITHUB_TOKEN / GH_TOKEN, gh auth token, none]

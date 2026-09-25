@@ -127,9 +127,6 @@ export async function run(input: string, opts: RunOptions): Promise<RunResult> {
     }
     if (r.modeUsed === 'none') diag.error('search', `Every search in ${name} failed.`, r.attempts.map((a) => a.q));
     else diag.info('search', `${name}: ${r.modeUsed} search, ${r.totalCount} results.`, r.attempts.map((a) => `${a.requested}: ${a.q}`));
-    if (r.rateLimit) {
-      diag.info('net', `GitHub ${r.rateLimit.resource} quota: ${r.rateLimit.remaining}/${r.rateLimit.limit} left, resets ${r.rateLimit.resetAt}.`);
-    }
     searches.push({ ...r, packages: t.packages });
 
     const pkg = await linkPackage(opts.client, d, t, target, diag);

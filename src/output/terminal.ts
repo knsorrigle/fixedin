@@ -1,6 +1,7 @@
 import pc from 'picocolors';
 import type { DetectResult } from '../detect.js';
 import type { Diagnostic } from '../diagnostics.js';
+import type { NetClient } from '../net/client.js';
 import type { RunResult } from '../pipeline.js';
 import { STRONG_MATCH, type Verdict } from '../verdict/index.js';
 import { relative } from 'node:path';
@@ -167,4 +168,21 @@ export function formatVerdicts(r: RunResult, cwd: string, limit: number): string
     }
   });
   return out.join('\n');
+}
+
+export function formatNetStats(stats: NetClient['stats']): string {
+  if (!stats) return pc.dim('\nnet: replaying recorded fixtures (no cache, no live quota)');
+  const lines = [''];
+  if (stats.cache) {
+    lines.push(pc.dim(`cache: ${stats.cache.hits} hit(s), ${stats.cache.misses} miss(es), ${stats.cache.writes} written — ${stats.cacheDir}`));
+  } else {
+    lines.push(pc.dim('cache: disabled'));
+  }
+  if (stats.quotas.size === 0) lines.push(pc.dim('quota: no GitHub requests went to the network'));
+  for (const q of [...stats.quotas.values()].sort((a, b) => a.resource.localeCompare(b.resource))) {
+    const low = q.remaining / Math.max(q.limit, 1) < 0.1;
+    const text = `quota: GitHub ${q.resource} ${q.remaining}/${q.limit} left, resets ${new Date(q.resetAt).toLocaleTimeString()}`;
+    lines.push(low ? pc.yellow(text) : pc.dim(text));
+  }
+  return lines.join('\n');
 }

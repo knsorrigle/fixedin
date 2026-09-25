@@ -27,13 +27,22 @@ export function describeGitHubError(err: unknown): { status?: number; message: s
   const e = err as {
     status?: number;
     message?: string;
-    response?: { data?: { message?: string; errors?: Array<{ message?: string } | string> } };
+    response?: {
+      data?: { message?: string; errors?: Array<{ message?: string } | string> };
+      headers?: Record<string, string | undefined>;
+    };
   };
   // 422s carry the useful part in errors[].message ("The search query contains invalid syntax.")
   const details = (e.response?.data?.errors ?? [])
     .map((x) => (typeof x === 'string' ? x : x.message))
     .filter(Boolean);
-  const apiMessage = [e.response?.data?.message, ...details].filter(Boolean).join(' — ');
+  let apiMessage = [e.response?.data?.message, ...details].filter(Boolean).join(' — ');
+  // Rate limited beyond our max wait: say when it resets.
+  const h = e.response?.headers;
+  if ((e.status === 403 || e.status === 429) && h?.['x-ratelimit-remaining'] === '0' && h['x-ratelimit-reset']) {
+    const reset = new Date(Number(h['x-ratelimit-reset']) * 1000);
+    apiMessage += ` (${h['x-ratelimit-resource'] ?? 'GitHub'} quota resets at ${reset.toLocaleTimeString()})`;
+  }
   return {
     ...(e.status ? { status: e.status } : {}),
     message: apiMessage ? `HTTP ${e.status}: ${apiMessage}` : (e.message ?? String(err)),

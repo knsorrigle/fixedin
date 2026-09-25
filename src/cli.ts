@@ -2,9 +2,11 @@
 import { Command, InvalidArgumentError } from 'commander';
 import { resolve } from 'node:path';
 import pc from 'picocolors';
-import { run } from './pipeline.js';
+import pkg from '../package.json' with { type: 'json' };
 import { defaultClient } from './net/client.js';
-import { formatDetect, formatDiagnostics, formatSearches, formatVerdicts } from './output/terminal.js';
+import { toReport } from './output/json.js';
+import { run } from './pipeline.js';
+import { formatDetect, formatDiagnostics, formatNetStats, formatSearches, formatVerdicts } from './output/terminal.js';
 
 interface CliOptions {
   cwd: string;
@@ -12,6 +14,7 @@ interface CliOptions {
   limit: number;
   repo?: string;
   verbose: boolean;
+  cache: boolean;
 }
 
 function parsePositiveInt(v: string): number {
@@ -35,6 +38,8 @@ const program = new Command()
   .option('--limit <n>', 'max issues to consider per repo', parsePositiveInt, 5)
   .option('--repo <owner/name>', 'search this GitHub repo instead of detecting packages')
   .option('-v, --verbose', 'show every attempt, cache hits and rate-limit quota', false)
+  .option('--no-cache', `don't read or write the disk cache (~/.cache/fixedin)`)
+  .version(pkg.version, '-V, --version')
   .action(async (words: string[], opts: CliOptions) => {
     let input = words.join(' ');
     if (!input && !process.stdin.isTTY) input = await readStdin();
@@ -43,18 +48,24 @@ const program = new Command()
     }
 
     const cwd = resolve(opts.cwd);
+    const client = defaultClient(process.env, {
+      noCache: !opts.cache,
+      // Always explain waits (on stderr, so --json stays clean).
+      onWait: (ms, reason) => console.error(pc.dim(`… ${reason}; waiting ${Math.ceil(ms / 1000)}s`)),
+    });
     const result = await run(input, {
       cwd,
-      client: defaultClient(),
+      client,
       limit: opts.limit,
       ...(opts.repo ? { repo: opts.repo } : {}),
     });
     const diagnostics = result.detect.diagnostics.items;
+    const stats = client.stats;
+    for (const e of stats?.cache?.errors ?? []) result.detect.diagnostics.warn('net', `Cache: ${e}`);
 
     if (opts.json) {
-      // Interim shape; the stable zod schema lands in M4.
-      const { diagnostics: _d, ...detectRest } = result.detect;
-      process.stdout.write(JSON.stringify({ ...result, detect: detectRest, diagnostics }, null, 2) + '\n');
+      process.stdout.write(JSON.stringify(toReport(result, pkg.version), null, 2) + '\n');
+      if (opts.verbose) console.error(formatNetStats(stats));
       return;
     }
     if (opts.verbose) {
@@ -64,6 +75,7 @@ const program = new Command()
     console.log(formatVerdicts(result, cwd, opts.limit));
     const diag = formatDiagnostics(diagnostics, opts.verbose);
     if (diag) console.error('\n' + diag);
+    if (opts.verbose) console.error(formatNetStats(stats));
   });
 
 program.parseAsync().catch((err: unknown) => {
