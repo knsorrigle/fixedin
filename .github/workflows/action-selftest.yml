@@ -62,8 +62,10 @@ jobs:
           test "$FIX" = true
           test "$CODE" = 1
           node -e "const r=JSON.parse(require('fs').readFileSync(process.env.REPORT,'utf8')); if (r.results[0].verdict.fixedIn !== '1.2.0') process.exit(1)"
+          # The job summary is written from this same file ($GITHUB_STEP_SUMMARY is
+          # per-step, so a later step can't read what the action wrote there).
+          grep -q 'fixedin: this failure was already fixed upstream' "$MARKDOWN"
           grep -q 'shipped in \*\*v1.2.0\*\*' "$MARKDOWN"
-          grep -q 'fixedin: this failure was already fixed upstream' "$GITHUB_STEP_SUMMARY"
           echo "outputs ok"
 
       - name: fail-on-fix fails the step
