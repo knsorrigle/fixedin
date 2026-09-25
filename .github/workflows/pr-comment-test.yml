@@ -49,3 +49,35 @@ jobs:
             }
             for (const d of r.diagnostics) console.log('diag', d.level, d.stage, d.message.slice(0, 160));
           "
+
+  probe-write:
+    # Same search, straight from the API, with this workflow's permissions.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Search with pull-requests write
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for mode in hybrid lexical; do
+            extra=(); [ "$mode" = hybrid ] && extra=(-f search_type=hybrid)
+            gh api -X GET search/issues -f q="repo:axios/axios is:issue Cannot read properties of undefined reading 'create'" -f per_page=5 "${extra[@]}" \
+              --jq '"'"$mode"': total \(.total_count), items \(.items | length), mode \(.search_type // "n/a"): " + ([.items[].number] | tostring)'
+          done
+
+  probe-read:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Search with contents read only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for mode in hybrid lexical; do
+            extra=(); [ "$mode" = hybrid ] && extra=(-f search_type=hybrid)
+            gh api -X GET search/issues -f q="repo:axios/axios is:issue Cannot read properties of undefined reading 'create'" -f per_page=5 "${extra[@]}" \
+              --jq '"'"$mode"': total \(.total_count), items \(.items | length), mode \(.search_type // "n/a"): " + ([.items[].number] | tostring)'
+          done
