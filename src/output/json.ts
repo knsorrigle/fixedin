@@ -118,13 +118,13 @@ export const ReportSchema = z.object({
     query: z.string(),
     errorCodes: z.array(z.string()),
   }),
-  lockfile: z.object({ kind: z.enum(['package-lock', 'pnpm', 'yarn', 'bun']), path: z.string() }).nullable(),
+  lockfile: z.object({ kind: z.enum(['package-lock', 'pnpm', 'yarn', 'bun', 'deno']), path: z.string() }).nullable(),
   auth: z.object({ source: z.enum(['GITHUB_TOKEN', 'GH_TOKEN', 'gh auth token', 'none']) }),
   packages: z.array(
     z.object({
       name: z.string(),
       hits: z.number().int(),
-      source: z.enum(['stack-frame', 'vite-deps', 'module-not-found']),
+      source: z.enum(['stack-frame', 'vite-deps', 'deno-npm-cache', 'module-not-found']),
       lowSignal: z.boolean(),
       installed: Installed.nullable(),
       repo: Repo.nullable(),

@@ -4,7 +4,8 @@
  * Implemented: package-lock.json / npm-shrinkwrap.json (lockfileVersion 2 & 3),
  *              pnpm-lock.yaml (lockfileVersion 5.x, 6.0, 9.0 — see ./pnpm.ts),
  *              yarn.lock (classic v1 and Berry v2+ — see ./yarn.ts),
- *              bun.lock (lockfileVersion 0–2 — see ./bun.ts; binary bun.lockb is detected, not read).
+ *              bun.lock (lockfileVersion 0–2 — see ./bun.ts; binary bun.lockb is detected, not read),
+ *              deno.lock (versions 3–5, npm packages only — see ./deno.ts).
  * Fallback:    node_modules/<pkg>/package.json when no supported lockfile exists.
  */
 import { existsSync, readFileSync } from 'node:fs';
@@ -12,12 +13,14 @@ import { dirname, join, resolve } from 'node:path';
 import { readPnpmLock } from './pnpm.js';
 import { readYarnLock } from './yarn.js';
 import { readBunLock } from './bun.js';
+import { readDenoLock } from './deno.js';
 
 export { readPnpmLock, parsePnpmLock } from './pnpm.js';
 export { readYarnLock, parseYarnLock } from './yarn.js';
 export { readBunLock, parseBunLock } from './bun.js';
+export { readDenoLock, parseDenoLock } from './deno.js';
 
-export type LockfileKind = 'package-lock' | 'pnpm' | 'yarn' | 'bun';
+export type LockfileKind = 'package-lock' | 'pnpm' | 'yarn' | 'bun' | 'deno';
 
 export interface InstalledPackage {
   name: string;
@@ -57,6 +60,7 @@ const CANDIDATES: Array<{ file: string; kind: LockfileKind }> = [
   { file: 'bun.lock', kind: 'bun' },
   // Binary; detected so we can say how to convert it (bun.lock wins if both exist).
   { file: 'bun.lockb', kind: 'bun' },
+  { file: 'deno.lock', kind: 'deno' },
 ];
 
 export interface LocatedLockfile {
@@ -83,7 +87,7 @@ export function locateLockfile(cwd: string): { found?: LocatedLockfile; tried: s
   }
 }
 
-/** `cwd` picks the workspace (which package you're running from) in pnpm, yarn and bun lockfiles. */
+/** `cwd` picks the workspace (which package you're running from) in pnpm, yarn, bun and deno lockfiles. */
 export function openLockfile(loc: LocatedLockfile, cwd?: string): LockfileReader {
   switch (loc.kind) {
     case 'package-lock':
@@ -94,6 +98,8 @@ export function openLockfile(loc: LocatedLockfile, cwd?: string): LockfileReader
       return readYarnLock(loc.path, cwd);
     case 'bun':
       return readBunLock(loc.path, cwd);
+    case 'deno':
+      return readDenoLock(loc.path, cwd);
   }
 }
 

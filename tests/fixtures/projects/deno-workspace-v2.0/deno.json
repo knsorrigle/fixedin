@@ -1,0 +1,4 @@
+{
+  "workspace": ["./packages/web", "./packages/api"],
+  "imports": { "axios": "npm:axios@1.5.0" }
+}

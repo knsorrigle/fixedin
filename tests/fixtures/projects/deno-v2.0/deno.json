@@ -1,0 +1,10 @@
+{
+  "imports": {
+    "axios": "npm:axios@1.1.3",
+    "react": "npm:react@18.2.0",
+    "react-dom": "npm:react-dom@18.2.0",
+    "@tanstack/react-query": "npm:@tanstack/react-query@5.0.0",
+    "semver": "npm:semver@^7.5.4",
+    "string-width-cjs": "npm:string-width@^4.2.0"
+  }
+}

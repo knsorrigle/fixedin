@@ -5,7 +5,7 @@
  *   - candidate npm packages, ranked by how likely they are the culprit
  */
 
-export type CandidateSource = 'stack-frame' | 'vite-deps' | 'module-not-found';
+export type CandidateSource = 'stack-frame' | 'vite-deps' | 'deno-npm-cache' | 'module-not-found';
 
 export interface PackageCandidate {
   name: string;
@@ -62,6 +62,14 @@ const FRAME = /^\s*at\s|^\s*[\w$.<>]*@\S+:\d+(:\d+)?\s*$/; // V8 "at …" and Fi
 /** A package segment directly after the LAST node_modules/ in a path. */
 const NODE_MODULES_PKG = /node_modules[\\/]+(?!.*node_modules[\\/])((?:@[^\\/\s:()'"]+[\\/]+)?[^\\/\s:()'"]+)/;
 const VITE_DEP = /node_modules[\\/]\.vite[\\/]deps[\\/]([^\\/\s:?()'"]+?)\.[mc]?js/;
+/**
+ * Deno runs npm packages from its cache, not node_modules:
+ *   …/deno/npm/registry.npmjs.org/axios/1.1.3/lib/core/Axios.js
+ *   …/deno/npm/registry.npmjs.org/@scope/pkg/1.0.0/index.js
+ * A registry host segment followed by a version segment keeps this specific.
+ */
+const DENO_NPM_CACHE =
+  /[\\/]npm[\\/][a-z0-9.-]+\.[a-z]{2,}(?::\d+)?[\\/]((?:@[^\\/\s:()'"]+[\\/])?[^\\/\s:()'"]+)[\\/]\d+\.\d+\.\d+[^\\/\s]*[\\/]/;
 const MODULE_NOT_FOUND = [
   /Cannot find module ['"]([^'"]+)['"]/,
   /Can't resolve ['"]([^'"]+)['"]/,
@@ -186,6 +194,10 @@ export function extractPackages(lines: string[]): PackageCandidate[] {
     }
     const nm = line.match(NODE_MODULES_PKG);
     if (nm) add(nm[1]!, i, 'stack-frame');
+    else {
+      const deno = line.match(DENO_NPM_CACHE);
+      if (deno) add(deno[1]!, i, 'deno-npm-cache');
+    }
     for (const re of MODULE_NOT_FOUND) {
       const m = line.match(re);
       if (m) add(bareSpecifierToPackage(m[1]!) ?? '', i, 'module-not-found');

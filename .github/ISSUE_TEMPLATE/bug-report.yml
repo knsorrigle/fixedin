@@ -38,7 +38,7 @@ body:
     id: lockfile
     attributes:
       label: Lockfile
-      options: [package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lock, bun.lockb, none]
+      options: [package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lock, bun.lockb, deno.lock, none]
   - type: dropdown
     id: auth
     attributes:

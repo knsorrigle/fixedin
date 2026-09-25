@@ -57,7 +57,8 @@
                 "package-lock",
                 "pnpm",
                 "yarn",
-                "bun"
+                "bun",
+                "deno"
               ]
             },
             "path": {
@@ -111,6 +112,7 @@
             "enum": [
               "stack-frame",
               "vite-deps",
+              "deno-npm-cache",
               "module-not-found"
             ]
           },
