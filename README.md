@@ -65,7 +65,46 @@ pbpaste | fixedin --json | jq '.results[].verdict.kind'
 | `--json` | | Stable JSON output (see [schema](#json-output)) |
 | `-v, --verbose` | | Every search query, trace step, release probe, cache hit and remaining API quota |
 | `--no-cache` | | Don't read or write `~/.cache/fixedin` |
+| `--markdown` | | GitHub-flavored markdown, for PR comments and job summaries |
 | `--exit-code` | | Exit **1** if a released fix exists that you don't have, **2** if fixedin couldn't tell (error, bad arguments, a search failed), else **0** |
+
+## GitHub Action
+
+When tests fail in a pull request, fixedin can say whether the failure is already fixed upstream — in the job summary and as a comment on the PR (updated on each run, never duplicated):
+
+```yaml
+permissions:
+  contents: read
+  pull-requests: write   # only for the PR comment
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: npm ci
+      - name: Test
+        shell: bash
+        run: npm test 2>&1 | tee test.log
+
+      - name: Already fixed upstream?
+        if: failure()
+        uses: knsorrigle/fixedin@v0.6.0
+        with:
+          log: test.log
+```
+
+| Input | Default | |
+|---|---|---|
+| `log` | *(required)* | File with the failing output |
+| `working-directory` | `.` | Project whose lockfile says what's installed |
+| `repo` | | Search this repo (`owner/name`) instead of detecting packages |
+| `comment` | `true` | Comment on the pull request (needs `pull-requests: write`; fork PRs get a read-only token, so it's skipped with a warning) |
+| `fail-on-fix` | `false` | Fail the step when a released fix exists that you don't have |
+| `github-token` | `github.token` | Token for GitHub search and the comment |
+| `version` | the action's own version | fixedin version to run from npm |
+
+Outputs: `fix-available` (`"true"`/`"false"`), `exit-code` (as for `--exit-code`), `report` (path to the `--json` report) and `markdown` (path to the markdown report). The action runs the fixedin release matching its tag, so `@v0.6.0` keeps behaving the same when newer versions ship. Issue titles and release notes in the comment are escaped so they can't @-mention anyone, link to issues in your repo, or inject HTML.
 
 ## Use in CI
 

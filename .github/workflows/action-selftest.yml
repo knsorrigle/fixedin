@@ -1,0 +1,117 @@
+name: Action self-test
+
+# Runs this repo's own GitHub Action (uses: ./) the way users will, against
+# the real axios/axios#5011 case: replayed on all three OSes, and live once
+# with the workflow's GITHUB_TOKEN.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: action-selftest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  replay:
+    name: Replayed / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    env:
+      # Recorded GitHub/npm responses: deterministic, no quota used.
+      FIXEDIN_REPLAY: ${{ github.workspace }}/tests/fixtures/http
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build # the action prefers this local build over npm
+
+      - name: A failing test log
+        shell: bash
+        run: cp tests/fixtures/stacks/axios-default-create.txt test.log
+
+      - name: Run the action
+        id: fixedin
+        uses: ./
+        with:
+          log: test.log
+          working-directory: tests/fixtures/projects/axios-1.1.3
+          repo: axios/axios
+          comment: 'false'
+
+      - name: Check the outputs
+        shell: bash
+        env:
+          FIX: ${{ steps.fixedin.outputs.fix-available }}
+          CODE: ${{ steps.fixedin.outputs.exit-code }}
+          REPORT: ${{ steps.fixedin.outputs.report }}
+          MARKDOWN: ${{ steps.fixedin.outputs.markdown }}
+        run: |
+          set -euo pipefail
+          test "$FIX" = true
+          test "$CODE" = 1
+          node -e "const r=JSON.parse(require('fs').readFileSync(process.env.REPORT,'utf8')); if (r.results[0].verdict.fixedIn !== '1.2.0') process.exit(1)"
+          grep -q 'shipped in \*\*v1.2.0\*\*' "$MARKDOWN"
+          grep -q 'fixedin: this failure was already fixed upstream' "$GITHUB_STEP_SUMMARY"
+          echo "outputs ok"
+
+      - name: fail-on-fix fails the step
+        id: strict
+        continue-on-error: true
+        uses: ./
+        with:
+          log: test.log
+          working-directory: tests/fixtures/projects/axios-1.1.3
+          repo: axios/axios
+          comment: 'false'
+          fail-on-fix: 'true'
+
+      - name: Check fail-on-fix
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.strict.outcome }}
+        run: test "$OUTCOME" = failure && echo "fail-on-fix ok"
+
+  live:
+    name: Live GitHub API (workflow token)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+      - name: A failing test log
+        run: cp tests/fixtures/stacks/axios-default-create.txt test.log
+
+      - name: Run the action (live)
+        id: fixedin
+        uses: ./
+        with:
+          log: test.log
+          working-directory: tests/fixtures/projects/axios-1.1.3
+          repo: axios/axios
+          comment: 'false'
+
+      - name: Check the verdict, and which search mode the workflow token got
+        env:
+          FIX: ${{ steps.fixedin.outputs.fix-available }}
+          REPORT: ${{ steps.fixedin.outputs.report }}
+        run: |
+          set -euo pipefail
+          node -e "const r=JSON.parse(require('fs').readFileSync(process.env.REPORT,'utf8')); const x=r.results[0]; console.log('search mode:', x.search.mode, '| verdict:', x.verdict.kind, '| fixed in:', x.verdict.fixedIn, '| match: #' + x.verdict.match?.number)"
+          test "$FIX" = true

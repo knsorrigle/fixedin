@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# The fixedin GitHub Action (see action.yml). Inputs arrive as INPUT_* env vars.
+set -uo pipefail
+
+fail() { echo "::error title=fixedin::$1"; exit 2; }
+
+[ -f "$INPUT_LOG" ] || fail "log file not found: $INPUT_LOG (write the failing output to a file first, e.g. \`npm test 2>&1 | tee test.log\`)"
+
+# Which fixedin to run: an explicit version; else this repo's own build (the
+# action's self-test); else the npm release matching this action's ref, so a
+# newer fixedin never changes what an older action tag does.
+if [ -n "$INPUT_VERSION" ]; then
+  cmd=(npx --yes "fixedin@$INPUT_VERSION")
+elif [ -f "$ACTION_PATH/dist/cli.js" ]; then
+  cmd=(node "$ACTION_PATH/dist/cli.js")
+else
+  version=$(node -p "require(process.env.ACTION_PATH + '/package.json').version") || fail "can't read this action's version"
+  cmd=(npx --yes "fixedin@$version")
+fi
+echo "Running: ${cmd[*]}"
+
+args=(--cwd "$INPUT_WORKING_DIRECTORY")
+[ -n "$INPUT_REPO" ] && args+=(--repo "$INPUT_REPO")
+
+out="${RUNNER_TEMP:-/tmp}/fixedin"
+mkdir -p "$out"
+report="$out/report.json"
+markdown="$out/report.md"
+
+# Diagnostics go to stderr, i.e. the job log.
+"${cmd[@]}" "${args[@]}" --json --exit-code < "$INPUT_LOG" > "$report"
+code=$?
+# Second pass for markdown; GitHub responses come from fixedin's disk cache.
+"${cmd[@]}" "${args[@]}" --markdown < "$INPUT_LOG" > "$markdown" 2>/dev/null || true
+
+fix=false
+[ "$code" = 1 ] && fix=true
+{
+  echo "exit-code=$code"
+  echo "fix-available=$fix"
+  echo "report=$report"
+  echo "markdown=$markdown"
+} >> "$GITHUB_OUTPUT"
+
+[ -s "$markdown" ] && cat "$markdown" >> "$GITHUB_STEP_SUMMARY"
+
+case "$code" in
+  1) echo "::warning title=fixedin::A released upstream fix exists for this failure — see the job summary." ;;
+  2) echo "::warning title=fixedin::fixedin couldn't tell whether this failure is fixed upstream — see the log above." ;;
+esac
+
+# Comment on the pull request: update fixedin's earlier comment rather than adding another.
+pr=""
+if [ -n "${GITHUB_EVENT_PATH:-}" ] && [ -f "$GITHUB_EVENT_PATH" ]; then
+  pr=$(jq -r '.pull_request.number // empty' "$GITHUB_EVENT_PATH")
+fi
+if [ "$INPUT_COMMENT" = "true" ] && [ -n "$pr" ] && [ -s "$markdown" ]; then
+  existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$pr/comments" --paginate \
+    --jq '.[] | select(.user.type == "Bot" and (.body | startswith("<!-- fixedin -->"))) | .id' 2>/dev/null | head -n 1)
+  if [ -n "$existing" ]; then
+    gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F "body=@$markdown" > /dev/null \
+      && echo "Updated fixedin comment on #$pr" \
+      || echo "::warning title=fixedin::Couldn't update the PR comment (does the job have 'pull-requests: write'? Fork PRs get a read-only token)."
+  else
+    gh api "repos/$GITHUB_REPOSITORY/issues/$pr/comments" -F "body=@$markdown" > /dev/null \
+      && echo "Commented on #$pr" \
+      || echo "::warning title=fixedin::Couldn't comment on the PR (does the job have 'pull-requests: write'? Fork PRs get a read-only token)."
+  fi
+fi
+
+if [ "$INPUT_FAIL_ON_FIX" = "true" ] && [ "$code" = 1 ]; then
+  echo "::error title=fixedin::Failing because a released upstream fix exists (fail-on-fix: true)."
+  exit 1
+fi
+exit 0

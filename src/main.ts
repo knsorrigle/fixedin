@@ -10,6 +10,7 @@ import pkg from '../package.json' with { type: 'json' };
 import { resolveToken } from './github/auth.js';
 import { defaultClient, type NetClient } from './net/client.js';
 import { toReport } from './output/json.js';
+import { formatMarkdown } from './output/markdown.js';
 import { formatDetect, formatDiagnostics, formatNetStats, formatSearches, formatVerdicts } from './output/terminal.js';
 import { run, type RunResult } from './pipeline.js';
 
@@ -27,6 +28,7 @@ export interface IO {
 interface CliOptions {
   cwd: string;
   json: boolean;
+  markdown: boolean;
   limit: number;
   repo?: string;
   verbose: boolean;
@@ -67,6 +69,7 @@ export async function main(argv: string[], io: IO): Promise<number> {
     .argument('[error...]', 'error message (or pipe a stack trace on stdin)')
     .option('--cwd <dir>', 'project directory to read the lockfile from', io.cwd)
     .option('--json', 'machine-readable output', false)
+    .option('--markdown', 'GitHub-flavored markdown, for PR comments and job summaries', false)
     .option('--limit <n>', 'max issues to show per repo', parsePositiveInt, 5)
     .option('--repo <owner/name>', 'search this GitHub repo instead of detecting packages')
     .option('-v, --verbose', 'show every attempt, cache hits and rate-limit quota', false)
@@ -99,7 +102,16 @@ export async function main(argv: string[], io: IO): Promise<number> {
       const stats = client.stats;
       for (const e of stats?.cache?.errors ?? []) result.detect.diagnostics.warn('net', `Cache: ${e}`);
 
-      if (opts.json) {
+      if (opts.json && opts.markdown) {
+        io.stderr('--json and --markdown are mutually exclusive.\n');
+        code = failure;
+        return;
+      }
+      if (opts.markdown) {
+        io.stdout(formatMarkdown(result, pkg.version) + '\n');
+        const diag = formatDiagnostics(result.detect.diagnostics.items, opts.verbose);
+        if (diag) io.stderr('\n' + diag + '\n');
+      } else if (opts.json) {
         io.stdout(JSON.stringify(toReport(result, pkg.version), null, 2) + '\n');
         if (opts.verbose) io.stderr(formatNetStats(stats) + '\n');
       } else {

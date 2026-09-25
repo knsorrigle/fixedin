@@ -1,0 +1,62 @@
+name: fixedin
+description: 'Is this test failure already fixed upstream? Reports the matching issue, the fixing release, and whether your installed version has it.'
+author: knsorrigle
+branding:
+  icon: search
+  color: blue
+
+inputs:
+  log:
+    description: 'Path to a file containing the failing output (e.g. `test.log` from `npm test 2>&1 | tee test.log`).'
+    required: true
+  working-directory:
+    description: 'Project directory whose lockfile says which versions are installed.'
+    default: .
+  repo:
+    description: 'Search this GitHub repo (owner/name) instead of detecting packages from the stack trace.'
+    default: ''
+  comment:
+    description: 'Comment the verdict on the pull request, updating fixedin''s previous comment ("true"/"false"). Needs `pull-requests: write`.'
+    default: 'true'
+  fail-on-fix:
+    description: 'Fail this step when a released fix exists that the project doesn''t have ("true"/"false").'
+    default: 'false'
+  github-token:
+    description: 'Token for GitHub issue search and for commenting.'
+    default: ${{ github.token }}
+  version:
+    description: 'fixedin version to run from npm. Default — the release matching this action''s ref.'
+    default: ''
+
+outputs:
+  fix-available:
+    description: '"true" when a released fix exists that the project does not have.'
+    value: ${{ steps.fixedin.outputs.fix-available }}
+  exit-code:
+    description: 'fixedin''s --exit-code result — 0 nothing to upgrade to, 1 a fix is available, 2 couldn''t tell.'
+    value: ${{ steps.fixedin.outputs.exit-code }}
+  report:
+    description: 'Path to the full --json report.'
+    value: ${{ steps.fixedin.outputs.report }}
+  markdown:
+    description: 'Path to the markdown report (also added to the job summary).'
+    value: ${{ steps.fixedin.outputs.markdown }}
+
+runs:
+  using: composite
+  steps:
+    - id: fixedin
+      shell: bash
+      # Inputs go through the environment, never into the script text, so a
+      # crafted input can't inject shell code.
+      env:
+        INPUT_LOG: ${{ inputs.log }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        INPUT_REPO: ${{ inputs.repo }}
+        INPUT_COMMENT: ${{ inputs.comment }}
+        INPUT_FAIL_ON_FIX: ${{ inputs.fail-on-fix }}
+        INPUT_VERSION: ${{ inputs.version }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: bash "$ACTION_PATH/action/run.sh"
