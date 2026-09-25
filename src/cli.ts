@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import pc from 'picocolors';
 import { run } from './pipeline.js';
 import { defaultClient } from './net/client.js';
-import { formatDetect, formatDiagnostics, formatSearches } from './output/terminal.js';
+import { formatDetect, formatDiagnostics, formatSearches, formatVerdicts } from './output/terminal.js';
 
 interface CliOptions {
   cwd: string;
@@ -57,8 +57,11 @@ const program = new Command()
       process.stdout.write(JSON.stringify({ ...result, detect: detectRest, diagnostics }, null, 2) + '\n');
       return;
     }
-    console.log(formatDetect(result.detect, cwd));
-    console.log(formatSearches(result));
+    if (opts.verbose) {
+      console.log(formatDetect(result.detect, cwd));
+      console.log(formatSearches(result));
+    }
+    console.log(formatVerdicts(result, cwd, opts.limit));
     const diag = formatDiagnostics(diagnostics, opts.verbose);
     if (diag) console.error('\n' + diag);
   });

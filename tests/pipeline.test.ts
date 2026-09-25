@@ -48,7 +48,11 @@ describe('run: detect → search (recorded)', () => {
     expect(r.searches[0]!.modeUsed).toBe('lexical');
     expect(r.searches[0]!.matches[0]!.number).toBe(5004);
     const warns = r.detect.diagnostics.items.filter((d) => d.level === 'warn');
-    expect(warns).toEqual([expect.objectContaining({ stage: 'auth', tried: ['GITHUB_TOKEN: not set'] })]);
+    expect(warns).toEqual([
+      expect.objectContaining({ stage: 'auth', tried: ['GITHUB_TOKEN: not set'] }),
+      expect.objectContaining({ stage: 'trace', message: expect.stringContaining('requires a GitHub token') }),
+    ]);
+    expect(r.verdicts[0]).toMatchObject({ kind: 'CLOSED_NO_FIX_FOUND', match: { number: 5004 } });
   });
 
   it('--repo searches only that repo', async () => {

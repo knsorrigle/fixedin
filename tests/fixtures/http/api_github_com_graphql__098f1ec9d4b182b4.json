@@ -1,0 +1,36 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://api.github.com/graphql",
+    "body": "{\"query\":\"\\nquery($owner: String!, $repo: String!, $number: Int!, $before: String) {\\n  repository(owner: $owner, name: $repo) {\\n    issue(number: $number) {\\n      number state stateReason closedAt url\\n      timelineItems(last: 100, before: $before, itemTypes: [CLOSED_EVENT, REOPENED_EVENT, CROSS_REFERENCED_EVENT, CONNECTED_EVENT, MARKED_AS_DUPLICATE_EVENT]) {\\n        pageInfo { hasPreviousPage startCursor }\\n        nodes {\\n          __typename\\n          ... on ClosedEvent { createdAt closer { __typename ... on PullRequest { number title url merged mergedAt baseRefName mergeCommit { oid } repository { nameWithOwner } } ... on Commit { oid url repository { nameWithOwner } } } }\\n          ... on ReopenedEvent { createdAt }\\n          ... on CrossReferencedEvent { createdAt willCloseTarget source { __typename ... on PullRequest { number title url merged mergedAt baseRefName mergeCommit { oid } repository { nameWithOwner } } } }\\n          ... on ConnectedEvent { createdAt subject { __typename ... on PullRequest { number title url merged mergedAt baseRefName mergeCommit { oid } repository { nameWithOwner } } } }\\n          ... on MarkedAsDuplicateEvent { createdAt canonical { __typename ... on Issue { number repository { nameWithOwner } } } }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{\"owner\":\"ai\",\"repo\":\"nanoid\",\"number\":363,\"before\":null}}"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 25 Sep 2026 09:28:30 GMT",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept-Encoding, Accept, X-Requested-With",
+      "x-accepted-oauth-scopes": "repo",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "31B9:375B25:7BC3F9:80C54F:6AB63EBD",
+      "x-oauth-client-id": "178c6fc778ccc68e1d6a",
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4897",
+      "x-ratelimit-reset": "1790329792",
+      "x-ratelimit-resource": "graphql",
+      "x-ratelimit-used": "103",
+      "x-xss-protection": "0"
+    },
+    "body": "{\"data\":{\"repository\":{\"issue\":{\"number\":363,\"state\":\"CLOSED\",\"stateReason\":\"COMPLETED\",\"closedAt\":\"2022-05-25T14:21:44Z\",\"url\":\"https://github.com/ai/nanoid/issues/363\",\"timelineItems\":{\"pageInfo\":{\"hasPreviousPage\":false,\"startCursor\":\"Y3Vyc29yOnYyOpPPAAABgPuYTMABqjY2NzgyNTg3NTc=\"},\"nodes\":[{\"__typename\":\"ClosedEvent\",\"createdAt\":\"2022-05-25T14:21:44Z\",\"closer\":null},{\"__typename\":\"CrossReferencedEvent\",\"createdAt\":\"2022-08-01T11:49:07Z\",\"willCloseTarget\":false,\"source\":{\"__typename\":\"Issue\"}},{\"__typename\":\"CrossReferencedEvent\",\"createdAt\":\"2022-10-29T11:03:28Z\",\"willCloseTarget\":false,\"source\":{\"__typename\":\"PullRequest\",\"number\":33,\"title\":\"fix bug: jest cannot import nanoid() -> added regex pattern to jest.c…\",\"url\":\"https://github.com/AHen-C0de/MyShoppingManager/pull/33\",\"merged\":true,\"mergedAt\":\"2022-10-29T11:04:19Z\",\"baseRefName\":\"main\",\"mergeCommit\":{\"oid\":\"4686b9e1465033b9050a0d772c01ea447140f5d4\"},\"repository\":{\"nameWithOwner\":\"AHen-C0de/MyShoppingManager\"}}},{\"__typename\":\"CrossReferencedEvent\",\"createdAt\":\"2023-07-22T09:24:01Z\",\"willCloseTarget\":false,\"source\":{\"__typename\":\"PullRequest\",\"number\":2,\"title\":\"Feature\",\"url\":\"https://github.com/kamabokochan/orenosaikyoTodoAppKetteisen/pull/2\",\"merged\":false,\"mergedAt\":null,\"baseRefName\":\"main\",\"mergeCommit\":null,\"repository\":{\"nameWithOwner\":\"kamabokochan/orenosaikyoTodoAppKetteisen\"}}},{\"__typename\":\"CrossReferencedEvent\",\"createdAt\":\"2024-03-10T13:24:32Z\",\"willCloseTarget\":false,\"source\":{\"__typename\":\"PullRequest\",\"number\":130,\"title\":\"[클린코드 리액트 3기 이진호] 페이먼츠 미션 Step2\",\"url\":\"https://github.com/next-step/react-payments/pull/130\",\"merged\":true,\"mergedAt\":\"2024-03-12T14:05:19Z\",\"baseRefName\":\"gn0lee\",\"mergeCommit\":{\"oid\":\"8bc2e8166fcead15bae814c33d54cdc759adb233\"},\"repository\":{\"nameWithOwner\":\"next-step/react-payments\"}}}]}}}}}"
+  }
+}

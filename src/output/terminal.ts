@@ -2,6 +2,7 @@ import pc from 'picocolors';
 import type { DetectResult } from '../detect.js';
 import type { Diagnostic } from '../diagnostics.js';
 import type { RunResult } from '../pipeline.js';
+import { STRONG_MATCH, type Verdict } from '../verdict/index.js';
 import { relative } from 'node:path';
 
 export function formatDetect(r: DetectResult, cwd: string): string {
@@ -101,5 +102,69 @@ export function formatSearches(r: RunResult): string {
       out.push(pc.dim(`        ${m.url}`));
     }
   }
+  return out.join('\n');
+}
+
+const VERDICT_STYLE: Record<Verdict['kind'], { icon: string; color: (s: string) => string; label: string }> = {
+  FIXED_UPSTREAM_UPGRADE: { icon: '✖', color: pc.red, label: 'fixed upstream — upgrade' },
+  ALREADY_HAVE_FIX: { icon: '!', color: pc.yellow, label: 'you already have the fix' },
+  FIX_UNRELEASED: { icon: '◐', color: pc.yellow, label: 'fix merged, not released' },
+  OPEN_ISSUE: { icon: '●', color: pc.yellow, label: 'open issue' },
+  CLOSED_NO_FIX_FOUND: { icon: '?', color: pc.dim, label: 'closed, no fix traced' },
+  NO_MATCH: { icon: '○', color: pc.dim, label: 'no matching issue' },
+};
+
+/** The error message without its class prefix, as it'd be quoted in an issue. */
+function displayMessage(query: string): string {
+  const m = query.replace(/^\s*[\w$]*(?:Error|Exception)(?:\s*\[[\w-]+\])?:\s*/, '');
+  return m.length > 90 ? `${m.slice(0, 89)}…` : m;
+}
+
+export function formatVerdicts(r: RunResult, cwd: string, limit: number): string {
+  const out: string[] = [];
+  const msg = displayMessage(r.detect.parsed.query);
+  r.verdicts.forEach((v, idx) => {
+    const style = VERDICT_STYLE[v.kind];
+    const who = v.packageName ?? `${v.repo.owner}/${v.repo.repo}`;
+    out.push('');
+    out.push(`  ${style.color(style.icon)} ${pc.bold(who)}: "${msg}" ${pc.dim(`(${style.label})`)}`);
+    if (v.match) {
+      const state = v.match.state === 'open' ? pc.yellow('open') : v.match.stateReason === 'not_planned' ? pc.dim('closed: not planned') : 'closed';
+      out.push(
+        `    Matched: ${pc.cyan(`${v.repo.owner}/${v.repo.repo}#${v.match.number}`)} (${state}) — similarity ${v.match.similarity.score.toFixed(2)}${
+          v.match.similarity.score < STRONG_MATCH ? pc.yellow(' (weak match — may be a different problem)') : ''
+        }`,
+      );
+      out.push(pc.dim(`             ${v.match.title}`));
+    }
+    if (v.fix) {
+      const by = v.fix.kind === 'pull_request' ? `PR #${v.fix.number}` : `commit ${v.fix.sha.slice(0, 7)}`;
+      const shipped = v.fixedIn
+        ? ` → shipped in ${pc.green(`v${v.fixedIn}`)}`
+        : v.kind === 'FIX_UNRELEASED'
+          ? ` → ${pc.yellow(`not in any release yet${v.latest ? ` (latest is v${v.latest})` : ''}`)}`
+          : '';
+      out.push(`    Fixed by: ${by}${shipped}${v.fix.evidence === 'referenced-pr-near-close' ? pc.dim(' (inferred: merged just before close)') : ''}`);
+    }
+    if (v.packageName && v.kind !== 'NO_MATCH') {
+      out.push(
+        `    You have: ${v.installed ? `${v.installed.version} ${pc.dim(`(from ${displayPath(v.installed.source, cwd)})`)}` : pc.yellow('unknown (not installed here)')}`,
+      );
+    }
+    if (v.workaround) {
+      out.push(`    Workaround: ${pc.cyan(v.workaround.url)} ${pc.dim(`by @${v.workaround.author}, ${v.workaround.reactions} 👍`)}`);
+      for (const line of v.workaround.excerpt.split('\n')) out.push(pc.dim(`      │ ${line}`));
+    }
+    const adviceColor = v.kind === 'FIXED_UPSTREAM_UPGRADE' ? pc.bold : (s: string) => s;
+    out.push(`    → ${adviceColor(v.advice)}`);
+
+    const others = (r.searches[idx]?.matches ?? []).filter((m) => m.number !== v.match?.number).slice(0, Math.max(0, limit - 1));
+    if (others.length) {
+      out.push(pc.dim(`    Other matches:`));
+      for (const m of others) {
+        out.push(pc.dim(`      ${m.similarity.score.toFixed(2)}  #${m.number} (${m.state})  ${m.title.length > 70 ? `${m.title.slice(0, 69)}…` : m.title}`));
+      }
+    }
+  });
   return out.join('\n');
 }

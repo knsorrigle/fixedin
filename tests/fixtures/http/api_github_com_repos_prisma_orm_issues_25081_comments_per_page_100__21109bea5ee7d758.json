@@ -1,0 +1,38 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.github.com/repos/prisma/orm/issues/25081/comments?per_page=100"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "cache-control": "private, max-age=60, s-maxage=60",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 25 Sep 2026 09:28:09 GMT",
+      "etag": "W/\"0101297ce7024c60a6fe5356d5312d05e39995e1209c55097cabb71d3e92ba19\"",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
+      "x-accepted-oauth-scopes": "",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-api-version-selected": "2022-11-28",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "31BA:E22A0:608FF7D:66FA25E:6AB63EA8",
+      "x-oauth-client-id": "178c6fc778ccc68e1d6a",
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4902",
+      "x-ratelimit-reset": "1790328778",
+      "x-ratelimit-resource": "core",
+      "x-ratelimit-used": "98",
+      "x-xss-protection": "0"
+    },
+    "body": "[{\"url\":\"https://api.github.com/repos/prisma/orm/issues/comments/2317320295\",\"html_url\":\"https://github.com/prisma/orm/issues/25081#issuecomment-2317320295\",\"issue_url\":\"https://api.github.com/repos/prisma/orm/issues/25081\",\"id\":2317320295,\"node_id\":\"IC_kwDOC3_Qic6KH4Bn\",\"user\":{\"login\":\"jkomyno\",\"id\":12381818,\"node_id\":\"MDQ6VXNlcjEyMzgxODE4\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/12381818?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/jkomyno\",\"html_url\":\"https://github.com/jkomyno\",\"followers_url\":\"https://api.github.com/users/jkomyno/followers\",\"following_url\":\"https://api.github.com/users/jkomyno/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/jkomyno/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/jkomyno/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/jkomyno/subscriptions\",\"organizations_url\":\"https://api.github.com/users/jkomyno/orgs\",\"repos_url\":\"https://api.github.com/users/jkomyno/repos\",\"events_url\":\"https://api.github.com/users/jkomyno/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/jkomyno/received_events\",\"type\":\"User\",\"user_view_type\":\"public\",\"site_admin\":false},\"created_at\":\"2024-08-29T10:57:06Z\",\"updated_at\":\"2024-08-29T10:57:06Z\",\"body\":\"Hi @acidjazz, when posting the Prisma schema, please do not omit the `datasource` block.\\r\\nWhat database are you using?\\r\\nIn the TypeScript snippet, what is the value of the `info` object? Thanks.\",\"author_association\":\"CONTRIBUTOR\",\"pin\":null,\"reactions\":{\"url\":\"https://api.github.com/repos/prisma/orm/issues/comments/2317320295/reactions\",\"total_count\":0,\"+1\":0,\"-1\":0,\"laugh\":0,\"hooray\":0,\"confused\":0,\"heart\":0,\"rocket\":0,\"eyes\":0},\"performed_via_github_app\":null,\"minimized\":null},{\"url\":\"https://api.github.com/repos/prisma/orm/issues/comments/2317731147\",\"html_url\":\"https://github.com/prisma/orm/issues/25081#issuecomment-2317731147\",\"issue_url\":\"https://api.github.com/repos/prisma/orm/issues/25081\",\"id\":2317731147,\"node_id\":\"IC_kwDOC3_Qic6KJcVL\",\"user\":{\"login\":\"acidjazz\",\"id\":967369,\"node_id\":\"MDQ6VXNlcjk2NzM2OQ==\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/967369?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/acidjazz\",\"html_url\":\"https://github.com/acidjazz\",\"followers_url\":\"https://api.github.com/users/acidjazz/followers\",\"following_url\":\"https://api.github.com/users/acidjazz/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/acidjazz/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/acidjazz/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/acidjazz/subscriptions\",\"organizations_url\":\"https://api.github.com/users/acidjazz/orgs\",\"repos_url\":\"https://api.github.com/users/acidjazz/repos\",\"events_url\":\"https://api.github.com/users/acidjazz/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/acidjazz/received_events\",\"type\":\"User\",\"user_view_type\":\"public\",\"site_admin\":false},\"created_at\":\"2024-08-29T13:54:07Z\",\"updated_at\":\"2024-08-29T13:54:07Z\",\"body\":\"> Hi @acidjazz, when posting the Prisma schema, please do not omit the `datasource` block. What database are you using? In the TypeScript snippet, what is the value of the `info` object? Thanks.\\r\\n\\r\\nI'm using MySQL, the info object is exactly what you see, just key/value strings.\\r\\n\\r\\n\",\"author_association\":\"NONE\",\"pin\":null,\"reactions\":{\"url\":\"https://api.github.com/repos/prisma/orm/issues/comments/2317731147/reactions\",\"total_count\":0,\"+1\":0,\"-1\":0,\"laugh\":0,\"hooray\":0,\"confused\":0,\"heart\":0,\"rocket\":0,\"eyes\":0},\"performed_via_github_app\":null,\"minimized\":null}]"
+  }
+}

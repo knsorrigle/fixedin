@@ -77,6 +77,33 @@ async function describeRequest(input: string | URL | Request, init?: RequestInit
   return { url, method, body };
 }
 
+/**
+ * Drop fields fixedin never reads from bulky responses, so fixtures stay
+ * reviewable. Only whole fields are removed; nothing is rewritten.
+ *   compare:   ~470KB of files/commits → status counts
+ *   packument: readme, per-version dependency trees → version, gitHead, time
+ */
+export function slimFixtureBody(url: string, body: string): string {
+  let json: Record<string, unknown>;
+  try {
+    json = JSON.parse(body) as Record<string, unknown>;
+  } catch {
+    return body;
+  }
+  if (/api\.github\.com\/repos\/[^/]+\/[^/]+\/compare\//.test(url) && 'status' in json) {
+    const { status, ahead_by, behind_by, total_commits } = json;
+    return JSON.stringify({ status, ahead_by, behind_by, total_commits });
+  }
+  if (/^https:\/\/registry\.npmjs\.org\/[^/]+(%2[fF][^/]+)?$/.test(url) && json.versions && typeof json.versions === 'object') {
+    const versions: Record<string, unknown> = {};
+    for (const [v, m] of Object.entries(json.versions as Record<string, Record<string, unknown>>)) {
+      versions[v] = { version: m.version, ...(m.gitHead ? { gitHead: m.gitHead } : {}), ...(m.repository ? { repository: m.repository } : {}) };
+    }
+    return JSON.stringify({ name: json.name, 'dist-tags': json['dist-tags'], versions, time: json.time });
+  }
+  return body;
+}
+
 /** Wraps a fetch so every exchange is written to `dir` as a JSON fixture. */
 export function recordingFetch(inner: FetchLike, dir: string): FetchLike {
   mkdirSync(dir, { recursive: true });
@@ -86,11 +113,12 @@ export function recordingFetch(inner: FetchLike, dir: string): FetchLike {
     const text = await res.clone().text();
     const headers: Record<string, string> = {};
     res.headers.forEach((v, k) => {
-      if (!/^(set-cookie|authorization)$/i.test(k)) headers[k] = v;
+      // Body may be slimmed and is stored decoded, so length/encoding headers would lie.
+      if (!/^(set-cookie|authorization|content-length|content-encoding|transfer-encoding)$/i.test(k)) headers[k] = v;
     });
     const exchange: RecordedExchange = {
       request: { method, url, ...(body ? { body } : {}) },
-      response: { status: res.status, headers, body: text },
+      response: { status: res.status, headers, body: slimFixtureBody(url, text) },
     };
     writeFileSync(join(dir, `${fixtureKey(method, url, body)}.json`), JSON.stringify(exchange, null, 2));
     return res;

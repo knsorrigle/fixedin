@@ -9,13 +9,11 @@
       "access-control-allow-origin": "*",
       "cache-control": "max-age=300",
       "cf-cache-status": "DYNAMIC",
-      "cf-ray": "a408be71d869c3e9-MAA",
+      "cf-ray": "a4090103b8678007-MAA",
       "connection": "keep-alive",
-      "content-encoding": "gzip",
       "content-type": "application/json",
-      "date": "Fri, 25 Sep 2026 08:43:54 GMT",
+      "date": "Fri, 25 Sep 2026 09:29:21 GMT",
       "server": "cloudflare",
-      "transfer-encoding": "chunked",
       "vary": "accept-encoding, accept"
     },
     "body": "{\"ava\":{\"workerThreads\":false},\"bugs\":{\"url\":\"https://github.com/sindresorhus/find-cache-dir/issues\"},\"dist\":{\"shasum\":\"1d05fc52e17ac6d5e393027f9e1a921e88b3b506\",\"tarball\":\"https://registry.npmjs.org/find-cache-dir/-/find-cache-dir-6.0.0.tgz\",\"fileCount\":5,\"integrity\":\"sha512-nZMBQ0IuwcMgW8jsiShHtj2WQS6ReVTOMGiSnriCdWBUN/eVsolBlE0EPXe2R5MfIWtqkpM4grjGuqimbWhUFA==\",\"signatures\":[{\"sig\":\"MEUCIHC48AhTstunB/ptlM7VNreeJnu4Wb6swRGyLIGwujqMAiEAlobaA1XNRRQcaffKRbvO+IZVdehht5h+8sKgtFeV9to=\",\"keyid\":\"SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U\"}],\"unpackedSize\":7229},\"name\":\"find-cache-dir\",\"type\":\"module\",\"types\":\"./index.d.ts\",\"author\":{\"url\":\"https://sindresorhus.com\",\"name\":\"Sindre Sorhus\",\"email\":\"sindresorhus@gmail.com\"},\"engines\":{\"node\":\">=16\"},\"exports\":{\"types\":\"./index.d.ts\",\"default\":\"./index.js\"},\"funding\":\"https://github.com/sponsors/sindresorhus\",\"gitHead\":\"795889c6c9218561dadcd9d0e5bd5bf40ccac40b\",\"license\":\"MIT\",\"scripts\":{\"test\":\"xo && ava && tsd\"},\"_npmUser\":{\"name\":\"sindresorhus\",\"email\":\"sindresorhus@gmail.com\"},\"homepage\":\"https://github.com/sindresorhus/find-cache-dir#readme\",\"keywords\":[\"cache\",\"directory\",\"caching\",\"find\",\"search\"],\"deprecated\":\"Renamed to `find-cache-directory`.\",\"repository\":{\"url\":\"git+https://github.com/sindresorhus/find-cache-dir.git\",\"type\":\"git\"},\"_npmVersion\":\"10.9.2\",\"description\":\"Finds the common standard cache directory\",\"directories\":{},\"maintainers\":[{\"name\":\"sindresorhus\",\"email\":\"sindresorhus@gmail.com\"}],\"_nodeVersion\":\"23.6.1\",\"dependencies\":{\"pkg-dir\":\"^7.0.0\",\"common-path-prefix\":\"^3.0.0\"},\"_hasShrinkwrap\":false,\"devDependencies\":{\"xo\":\"^0.56.0\",\"ava\":\"^5.3.1\",\"del\":\"^7.0.0\",\"tsd\":\"^0.28.1\",\"tempy\":\"^3.1.0\"},\"_npmOperationalInternal\":{\"tmp\":\"tmp/find-cache-dir_6.0.0_1744126214680_0.4427461682711682\",\"host\":\"s3://npm-registry-packages-npm-production\"},\"_id\":\"find-cache-dir@6.0.0\",\"version\":\"6.0.0\"}"

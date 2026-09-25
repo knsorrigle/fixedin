@@ -65,9 +65,14 @@ export function similarity(query: string, title: string, body: string | null | u
   const bodyCov = coverage(q, b);
   const msg = normalizeMessage(query);
   // Require a reasonably specific message before trusting a substring match.
-  const verbatim = msg.length >= 15 && normalizeMessage(`${title}\n${b}`).includes(msg);
+  const specific = msg.length >= 15;
+  const inTitle = specific && normalizeMessage(title).includes(msg);
+  const inBody = specific && !inTitle && normalizeMessage(b).includes(msg);
+  const verbatim = inTitle || inBody;
   const blended = 0.6 * titleCov + 0.4 * Math.max(bodyCov, titleCov);
-  const score = verbatim ? Math.max(blended, 0.8 + 0.2 * titleCov) : blended;
+  // Verbatim in the title is near-certain. Verbatim only in the body is weaker:
+  // common errors get pasted into the logs of many unrelated issues.
+  const score = inTitle ? Math.max(blended, 0.8 + 0.2 * titleCov) : inBody ? Math.max(blended, 0.5 + 0.4 * titleCov) : blended;
   return { score: round(score), title: round(titleCov), body: round(bodyCov), verbatim };
 }
 

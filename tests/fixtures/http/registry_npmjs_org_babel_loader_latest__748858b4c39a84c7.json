@@ -7,17 +7,15 @@
     "status": 200,
     "headers": {
       "access-control-allow-origin": "*",
-      "age": "2",
+      "age": "42",
       "cache-control": "public, max-age=300",
       "cf-cache-status": "HIT",
-      "cf-ray": "a408be835d927f67-MAA",
+      "cf-ray": "a4090103ba647f13-MAA",
       "connection": "keep-alive",
-      "content-encoding": "gzip",
       "content-type": "application/json",
-      "date": "Fri, 25 Sep 2026 08:43:57 GMT",
-      "last-modified": "Fri, 25 Sep 2026 08:43:54 GMT",
+      "date": "Fri, 25 Sep 2026 09:29:21 GMT",
+      "last-modified": "Fri, 25 Sep 2026 09:28:39 GMT",
       "server": "cloudflare",
-      "transfer-encoding": "chunked",
       "vary": "accept-encoding, accept"
     },
     "body": "{\"nyc\":{\"all\":true,\"include\":[\"src/**/*.js\"],\"reporter\":[\"text\",\"json\"],\"sourceMap\":false,\"instrument\":false},\"bugs\":{\"url\":\"https://github.com/babel/babel-loader/issues\"},\"dist\":{\"shasum\":\"ce9748e85b7071eb88006e3cfa9e6cf14eeb97c5\",\"tarball\":\"https://registry.npmjs.org/babel-loader/-/babel-loader-10.1.1.tgz\",\"fileCount\":11,\"integrity\":\"sha512-JwKSzk2kjIe7mgPK+/lyZ2QAaJcpahNAdM+hgR2HI8D0OJVkdj8Rl6J3kaLYki9pwF7P2iWnD8qVv80Lq1ABtg==\",\"signatures\":[{\"sig\":\"MEUCIDT1JOS0dAaReBNIOrC8FiWCAVjcfCIryKduT+BuRJLcAiEApbfdBJsejQRERG+VeQvyUgP5ldhWgcvGep4C0cc3mnc=\",\"keyid\":\"SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U\"}],\"unpackedSize\":50300},\"main\":\"lib/index.js\",\"name\":\"babel-loader\",\"author\":\"Luis Couto <hello@luiscouto.pt>\",\"engines\":{\"node\":\"^18.20.0 || ^20.10.0 || >=22.0.0\"},\"gitHead\":\"da602105664458752dca3578856ee8d0d6ac80e6\",\"license\":\"MIT\",\"scripts\":{\"lint\":\"eslint src test\",\"test\":\"yarn run lint && yarn run build --source-maps && c8 yarn run test-only\",\"build\":\"babel src/ --out-dir lib/ --copy-files\",\"clean\":\"node ./scripts/rimraf.mjs lib\",\"format\":\"prettier --write --trailing-comma all 'src/**/*.js' 'test/**/*.test.js' 'test/helpers/*.js' && prettier --write --trailing-comma es5 'scripts/*.js'\",\"precommit\":\"lint-staged\",\"test-only\":\"node --test test/**/*.test.js\",\"prepublish\":\"yarn run clean && yarn run build\",\"preversion\":\"yarn tsc && yarn run test\"},\"_npmUser\":{\"name\":\"nicolo-ribaudo\",\"email\":\"nicolo.ribaudo@gmail.com\"},\"homepage\":\"https://github.com/babel/babel-loader\",\"keywords\":[\"webpack\",\"loader\",\"babel\",\"es6\",\"transpiler\",\"module\"],\"repository\":{\"url\":\"https://github.com/babel/babel-loader.git\",\"type\":\"git\"},\"description\":\"babel module loader for webpack\",\"directories\":{},\"lint-staged\":{\"src/**/*.js\":[\"prettier --trailing-comma all --write\",\"git add\"],\"package.json\":[\"node ./scripts/yarn-install.js\",\"git add yarn.lock\"],\"scripts/*.js\":[\"prettier --trailing-comma es5 --write\",\"git add\"],\"test/**/*.test.js\":[\"prettier --trailing-comma all --write\",\"git add\"],\"test/helpers/*.js\":[\"prettier --trailing-comma all --write\",\"git add\"]},\"maintainers\":[{\"name\":\"loganfsmyth\",\"email\":\"loganfsmyth@gmail.com\"},{\"name\":\"hzoo\",\"email\":\"hi@henryzoo.com\"},{\"name\":\"existentialism\",\"email\":\"bng412@gmail.com\"},{\"name\":\"nicolo-ribaudo\",\"email\":\"nicolo.ribaudo@gmail.com\"}],\"resolutions\":{\"minipass\":\"6.0.2\"},\"dependencies\":{\"find-up\":\"^5.0.0\"},\"_hasShrinkwrap\":false,\"packageManager\":\"yarn@3.6.4\",\"devDependencies\":{\"c8\":\"^10.1.2\",\"husky\":\"^9.1.5\",\"eslint\":\"^9.6.0\",\"globals\":\"^15.8.0\",\"webpack\":\"^5.93.0\",\"prettier\":\"^3.0.0\",\"@babel/cli\":\"^8.0.0-beta.1\",\"typescript\":\"^5.8.3\",\"@babel/core\":\"^8.0.0-beta.1\",\"lint-staged\":\"^15.2.9\",\"@rspack/core\":\"^1.7.5\",\"@babel/preset-env\":\"^8.0.0-beta.1\",\"@babel/eslint-parser\":\"^8.0.0-beta.1\",\"eslint-config-prettier\":\"^9.1.0\",\"eslint-plugin-prettier\":\"^5.1.3\"},\"peerDependencies\":{\"webpack\":\">=5.61.0\",\"@babel/core\":\"^7.12.0 || ^8.0.0-beta.1\",\"@rspack/core\":\"^1.0.0 || ^2.0.0-0\"},\"peerDependenciesMeta\":{\"webpack\":{\"optional\":true},\"@rspack/core\":{\"optional\":true}},\"_npmOperationalInternal\":{\"tmp\":\"tmp/babel-loader_10.1.1_1773079083390_0.7785586837895453\",\"host\":\"s3://npm-registry-packages-npm-production\"},\"_id\":\"babel-loader@10.1.1\",\"version\":\"10.1.1\"}"

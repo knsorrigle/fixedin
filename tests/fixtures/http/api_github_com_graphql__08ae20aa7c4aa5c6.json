@@ -1,0 +1,36 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://api.github.com/graphql",
+    "body": "{\"query\":\"\\nquery($owner: String!, $repo: String!, $number: Int!, $before: String) {\\n  repository(owner: $owner, name: $repo) {\\n    issue(number: $number) {\\n      number state stateReason closedAt url\\n      timelineItems(last: 100, before: $before, itemTypes: [CLOSED_EVENT, REOPENED_EVENT, CROSS_REFERENCED_EVENT, CONNECTED_EVENT, MARKED_AS_DUPLICATE_EVENT]) {\\n        pageInfo { hasPreviousPage startCursor }\\n        nodes {\\n          __typename\\n          ... on ClosedEvent { createdAt closer { __typename ... on PullRequest { number title url merged mergedAt baseRefName mergeCommit { oid } repository { nameWithOwner } } ... on Commit { oid url repository { nameWithOwner } } } }\\n          ... on ReopenedEvent { createdAt }\\n          ... on CrossReferencedEvent { createdAt willCloseTarget source { __typename ... on PullRequest { number title url merged mergedAt baseRefName mergeCommit { oid } repository { nameWithOwner } } } }\\n          ... on ConnectedEvent { createdAt subject { __typename ... on PullRequest { number title url merged mergedAt baseRefName mergeCommit { oid } repository { nameWithOwner } } } }\\n          ... on MarkedAsDuplicateEvent { createdAt canonical { __typename ... on Issue { number repository { nameWithOwner } } } }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{\"owner\":\"axios\",\"repo\":\"axios\",\"number\":5004,\"before\":null}}"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 25 Sep 2026 09:27:58 GMT",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept-Encoding, Accept, X-Requested-With",
+      "x-accepted-oauth-scopes": "repo",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "318C:20B565:7D436D:82414D:6AB63E9D",
+      "x-oauth-client-id": "178c6fc778ccc68e1d6a",
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4900",
+      "x-ratelimit-reset": "1790329792",
+      "x-ratelimit-resource": "graphql",
+      "x-ratelimit-used": "100",
+      "x-xss-protection": "0"
+    },
+    "body": "{\"data\":{\"repository\":{\"issue\":{\"number\":5004,\"state\":\"CLOSED\",\"stateReason\":\"COMPLETED\",\"closedAt\":\"2024-09-29T11:15:57Z\",\"url\":\"https://github.com/axios/axios/issues/5004\",\"timelineItems\":{\"pageInfo\":{\"hasPreviousPage\":false,\"startCursor\":\"Y3Vyc29yOnYyOpPPAAABg7FgdEACqjEyMTk5NTY0NDk=\"},\"nodes\":[{\"__typename\":\"CrossReferencedEvent\",\"createdAt\":\"2022-10-07T07:37:12Z\",\"willCloseTarget\":false,\"source\":{\"__typename\":\"Issue\"}},{\"__typename\":\"CrossReferencedEvent\",\"createdAt\":\"2022-11-18T09:39:57Z\",\"willCloseTarget\":false,\"source\":{\"__typename\":\"PullRequest\",\"number\":1079,\"title\":\"chore: bump axios from 0.27.2 to 1.1.3\",\"url\":\"https://github.com/ffflorian/gh-open/pull/1079\",\"merged\":false,\"mergedAt\":null,\"baseRefName\":\"main\",\"mergeCommit\":null,\"repository\":{\"nameWithOwner\":\"ffflorian/gh-open\"}}},{\"__typename\":\"CrossReferencedEvent\",\"createdAt\":\"2022-11-18T09:40:13Z\",\"willCloseTarget\":false,\"source\":{\"__typename\":\"PullRequest\",\"number\":1132,\"title\":\"chore: bump axios from 0.27.2 to 1.1.3\",\"url\":\"https://github.com/ffflorian/electron-info/pull/1132\",\"merged\":false,\"mergedAt\":null,\"baseRefName\":\"main\",\"mergeCommit\":null,\"repository\":{\"nameWithOwner\":\"ffflorian/electron-info\"}}},{\"__typename\":\"CrossReferencedEvent\",\"createdAt\":\"2022-11-18T09:40:22Z\",\"willCloseTarget\":false,\"source\":{\"__typename\":\"PullRequest\",\"number\":1113,\"title\":\"chore: bump axios from 0.27.2 to 1.1.3\",\"url\":\"https://github.com/ffflorian/api-clients/pull/1113\",\"merged\":false,\"mergedAt\":null,\"baseRefName\":\"main\",\"mergeCommit\":null,\"repository\":{\"nameWithOwner\":\"ffflorian/api-clients\"}}},{\"__typename\":\"CrossReferencedEvent\",\"createdAt\":\"2022-11-18T09:40:45Z\",\"willCloseTarget\":false,\"source\":{\"__typename\":\"PullRequest\",\"number\":823,\"title\":\"chore: bump axios from 0.27.2 to 1.1.3\",\"url\":\"https://github.com/ffflorian/auto-approver/pull/823\",\"merged\":false,\"mergedAt\":null,\"baseRefName\":\"main\",\"mergeCommit\":null,\"repository\":{\"nameWithOwner\":\"ffflorian/auto-approver\"}}},{\"__typename\":\"ClosedEvent\",\"createdAt\":\"2024-09-29T11:15:57Z\",\"closer\":null},{\"__typename\":\"CrossReferencedEvent\",\"createdAt\":\"2026-08-07T18:25:46Z\",\"willCloseTarget\":false,\"source\":{\"__typename\":\"PullRequest\",\"number\":72,\"title\":\"fix(fiscal): IBPT fora do ar não pode travar a emissão — importação por arquivo + diagnóstico\",\"url\":\"https://github.com/Taino-Edu/Tenant-ERP_Model/pull/72\",\"merged\":true,\"mergedAt\":\"2026-08-07T18:35:24Z\",\"baseRefName\":\"main\",\"mergeCommit\":{\"oid\":\"15feca31adaa6ca3149d85cb78f005978f0a3335\"},\"repository\":{\"nameWithOwner\":\"Taino-Edu/Tenant-ERP_Model\"}}}]}}}}}"
+  }
+}

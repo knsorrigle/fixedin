@@ -1,0 +1,13 @@
+const client = axios.create()
+                     ^
+
+TypeError: Cannot read properties of undefined (reading 'create')
+    at Object.<anonymous> (/Users/rob/Developer/Personal/full-feed/test.js:5:22)
+    at Module._compile (node:internal/modules/cjs/loader:1149:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1203:10)
+    at Module.load (node:internal/modules/cjs/loader:1027:32)
+    at Module._load (node:internal/modules/cjs/loader:868:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:81:12)
+    at node:internal/main/run_main_module:23:47
+
+Node.js v18.10.0

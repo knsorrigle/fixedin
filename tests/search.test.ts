@@ -59,10 +59,15 @@ describe('similarity', () => {
     expect(sameShapeOtherProp.score).toBeLessThan(0.8);
     expect(onlySpecific.title).toBeGreaterThan(0.3);
   });
-  it('finds the message in the body when the title is vague', () => {
-    const s = similarity('Error: Unique constraint failed on the fields: (`email`)', 'Cannot insert data', 'logs:\nUnique constraint failed on the fields: (`email`)\n');
-    expect(s.verbatim).toBe(true);
-    expect(s.score).toBeGreaterThanOrEqual(0.8);
+  it('credits a verbatim body match, but less than a title match', () => {
+    const q = 'Error: Unique constraint failed on the fields: (`email`)';
+    const body = 'logs:\nUnique constraint failed on the fields: (`email`)\n';
+    const vagueTitle = similarity(q, 'Cannot insert data', body);
+    expect(vagueTitle.verbatim).toBe(true);
+    expect(vagueTitle.score).toBeGreaterThanOrEqual(0.5);
+    expect(vagueTitle.score).toBeLessThan(0.6); // below MATCH_THRESHOLD on its own
+    const relevantTitle = similarity(q, 'Unique constraint error on email field', body);
+    expect(relevantTitle.score).toBeGreaterThan(0.75);
   });
   it('does not trust very short verbatim matches', () => {
     expect(similarity('Error: fetch failed', 'x', 'fetch failed').verbatim).toBe(false);

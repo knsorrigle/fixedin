@@ -32,7 +32,6 @@
     "semver"
   ],
   "dependencies": {
-    "@octokit/graphql": "^9.0.5",
     "@octokit/rest": "^22.0.1",
     "commander": "^14.0.3",
     "picocolors": "^1.1.1",

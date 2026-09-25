@@ -1,0 +1,37 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.github.com/search/issues?q=repo%3Ababel%2Fbabel-loader%20is%3Aissue%20The%20path%20argument%20must%20be%20of%20type%20string.%20Received%20undefined%20ERR_INVALID_ARG_TYPE&per_page=20&search_type=hybrid"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "cache-control": "no-cache",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Fri, 25 Sep 2026 09:29:25 GMT",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
+      "x-accepted-oauth-scopes": "",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-api-version-selected": "2022-11-28",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "319D:18C945:7F3C7F:8444D4:6AB63EF4",
+      "x-oauth-client-id": "178c6fc778ccc68e1d6a",
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "10",
+      "x-ratelimit-remaining": "7",
+      "x-ratelimit-reset": "1790328612",
+      "x-ratelimit-resource": "semantic_search",
+      "x-ratelimit-used": "3",
+      "x-xss-protection": "0"
+    },
+    "body": "{\"total_count\":1,\"incomplete_results\":false,\"items\":[{\"url\":\"https://api.github.com/repos/babel/babel-loader/issues/448\",\"repository_url\":\"https://api.github.com/repos/babel/babel-loader\",\"labels_url\":\"https://api.github.com/repos/babel/babel-loader/issues/448/labels{/name}\",\"comments_url\":\"https://api.github.com/repos/babel/babel-loader/issues/448/comments\",\"events_url\":\"https://api.github.com/repos/babel/babel-loader/issues/448/events\",\"html_url\":\"https://github.com/babel/babel-loader/issues/448\",\"id\":227943571,\"node_id\":\"MDU6SXNzdWUyMjc5NDM1NzE=\",\"number\":448,\"title\":\"Module parse failed: (My Path) Unexpected token (6:4) You may need an appropriate loader to handle this file type.\",\"user\":{\"login\":\"aszanky\",\"id\":18343763,\"node_id\":\"MDQ6VXNlcjE4MzQzNzYz\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/18343763?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/aszanky\",\"html_url\":\"https://github.com/aszanky\",\"followers_url\":\"https://api.github.com/users/aszanky/followers\",\"following_url\":\"https://api.github.com/users/aszanky/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/aszanky/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/aszanky/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/aszanky/subscriptions\",\"organizations_url\":\"https://api.github.com/users/aszanky/orgs\",\"repos_url\":\"https://api.github.com/users/aszanky/repos\",\"events_url\":\"https://api.github.com/users/aszanky/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/aszanky/received_events\",\"type\":\"User\",\"user_view_type\":\"public\",\"site_admin\":false},\"labels\":[],\"state\":\"closed\",\"locked\":false,\"assignees\":[],\"milestone\":null,\"comments\":1,\"created_at\":\"2017-05-11T10:16:26Z\",\"updated_at\":\"2017-05-11T20:31:49Z\",\"closed_at\":\"2017-05-11T20:31:49Z\",\"assignee\":null,\"author_association\":\"NONE\",\"issue_field_values\":[],\"type\":null,\"active_lock_reason\":null,\"sub_issues_summary\":{\"total\":0,\"completed\":0,\"percent_completed\":0},\"issue_dependencies_summary\":{\"blocked_by\":0,\"total_blocked_by\":0,\"blocking\":0,\"total_blocking\":0},\"body\":\"I often get this problem. what I have to do to resolve it ?\\r\\n\\r\\nModule parse failed: E:\\\\LEARN-PROGRAMMING\\\\React-Scratch\\\\source\\\\index.js Unexpected token (6:4)\\r\\nYou may need an appropriate loader to handle this file type.\\r\\n|\\r\\n| ReactDOM.render(\\r\\n|     <App />,\\r\\n|     document.getElementById('app')\\r\\n| );\\r\\n @ multi webpack-dev-server/client?http://0.0.0.0:3000 webpack/hot/only-dev-server ./source/index\\r\\nwebpack: Failed to compile.\\r\\n\\r\\nthis is my webpack.config\\r\\n\\r\\nvar path = require('path');\\r\\nvar webpack = require('webpack');\\r\\n\\r\\nmodule.exports = {\\r\\n  devtool: 'inline-source-map',\\r\\n\\r\\n  entry: [\\r\\n    'webpack-dev-server/client?http://0.0.0.0:3000', // WebpackDevServer host and port\\r\\n    'webpack/hot/only-dev-server', // \\\"only\\\" prevents reload on syntax errors\\r\\n    './source/index' // Your appʼs entry point\\r\\n  ],\\r\\n\\r\\n  output: {\\r\\n    path: path.join(__dirname, 'dist'),\\r\\n    filename: 'bundle.js',\\r\\n    publicPath: '/static/'\\r\\n  },\\r\\n\\r\\n  resolve: {\\r\\n    extensions: ['.js', '.jsx']\\r\\n  },\\r\\n\\r\\n  plugins: [\\r\\n    new webpack.HotModuleReplacementPlugin()\\r\\n  ],\\r\\n\\r\\n  module: {\\r\\n    loaders: [{\\r\\n      test: /\\\\.(js|jsx)$/,\\r\\n      loaders: ['babel-loader'],\\r\\n      include: path.join(__dirname, 'src')\\r\\n    }]\\r\\n  }\\r\\n};\\r\\n\\r\\nThanks\",\"reactions\":{\"url\":\"https://api.github.com/repos/babel/babel-loader/issues/448/reactions\",\"total_count\":0,\"+1\":0,\"-1\":0,\"laugh\":0,\"hooray\":0,\"confused\":0,\"heart\":0,\"rocket\":0,\"eyes\":0},\"timeline_url\":\"https://api.github.com/repos/babel/babel-loader/issues/448/timeline\",\"performed_via_github_app\":null,\"state_reason\":\"completed\",\"pinned_comment\":null,\"score\":1.0}],\"search_type\":\"hybrid\"}"
+  }
+}

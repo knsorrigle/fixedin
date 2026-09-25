@@ -9,13 +9,11 @@
       "access-control-allow-origin": "*",
       "cache-control": "max-age=300",
       "cf-cache-status": "DYNAMIC",
-      "cf-ray": "a408be667b7150fb-MAA",
+      "cf-ray": "a408ffb5ab1b380b-MAA",
       "connection": "keep-alive",
-      "content-encoding": "gzip",
       "content-type": "application/json",
-      "date": "Fri, 25 Sep 2026 08:43:52 GMT",
+      "date": "Fri, 25 Sep 2026 09:28:28 GMT",
       "server": "cloudflare",
-      "transfer-encoding": "chunked",
       "vary": "accept-encoding, accept"
     },
     "body": "{\"bin\":{\"nanoid\":\"bin/nanoid.js\"},\"bugs\":{\"url\":\"https://github.com/ai/nanoid/issues\"},\"dist\":{\"shasum\":\"a04a2304f05b620c600ae8464d94c325ceeebd35\",\"tarball\":\"https://registry.npmjs.org/nanoid/-/nanoid-6.0.1.tgz\",\"fileCount\":11,\"integrity\":\"sha512-3wVS3i51pE2pi1k5FFL/95BGfVS0kSsvDVuGXHOtxox/TywUmtgq+3qiTOTbs9J7KfHaXPiN171k/A6dBnaXFw==\",\"signatures\":[{\"sig\":\"MEQCIFJOQhQncY0OqipkbWpXqLNebGO1tPAAxdOJ7qkdopvqAiAI+VIyg96LTYUhaeDIwz7OE5sE1XYekvIbXlT3ArgNfg==\",\"keyid\":\"SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U\"}],\"attestations\":{\"url\":\"https://registry.npmjs.org/-/npm/v1/attestations/nanoid@6.0.1\",\"provenance\":{\"predicateType\":\"https://slsa.dev/provenance/v1\"}},\"unpackedSize\":14692},\"name\":\"nanoid\",\"type\":\"module\",\"types\":\"./index.d.ts\",\"author\":{\"name\":\"Andrey Sitnik\",\"email\":\"andrey@sitnik.es\"},\"browser\":{\"./index.js\":\"./index.browser.js\"},\"engines\":{\"node\":\"^22 || ^24 || >=26\"},\"exports\":{\".\":{\"types\":\"./index.d.ts\",\"browser\":\"./index.browser.js\",\"default\":\"./index.js\",\"react-native\":\"./index.browser.js\"},\"./non-secure\":{\"types\":\"./non-secure/index.d.ts\",\"default\":\"./non-secure/index.js\"},\"./package.json\":\"./package.json\"},\"funding\":[{\"url\":\"https://github.com/sponsors/ai\",\"type\":\"github\"}],\"gitHead\":\"9247b6dbfe97854e6e136784ae5dde0c672d22c5\",\"license\":\"MIT\",\"_npmUser\":{\"name\":\"GitHub Actions\",\"email\":\"npm-oidc-no-reply@github.com\",\"approver\":{\"name\":\"ai\",\"email\":\"andrey@sitnik.es\"},\"trustedPublisher\":{\"id\":\"github\",\"oidcConfigId\":\"oidc:012e1798-4fc7-407a-b875-bbc877f0017d\"}},\"homepage\":\"https://github.com/ai/nanoid#readme\",\"keywords\":[\"id\",\"random\",\"url\",\"uuid\"],\"repository\":{\"url\":\"git+https://github.com/ai/nanoid.git\",\"type\":\"git\"},\"_npmVersion\":\"11.17.0\",\"description\":\"A tiny (118 bytes), secure URL-friendly unique string ID generator\",\"directories\":{},\"maintainers\":[{\"name\":\"ai\",\"email\":\"andrey@sitnik.es\"}],\"sideEffects\":false,\"_nodeVersion\":\"26.5.1\",\"react-native\":{\"./index.js\":\"./index.browser.js\"},\"_hasShrinkwrap\":false,\"_npmOperationalInternal\":{\"tmp\":\"tmp/nanoid_6.0.1_1785754747712_0.8626312143393642\",\"host\":\"s3://npm-registry-packages-npm-production\"},\"_id\":\"nanoid@6.0.1\",\"version\":\"6.0.1\"}"
