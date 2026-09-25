@@ -35,6 +35,12 @@ const Similarity = z.object({
   title: z.number().min(0).max(1),
   body: z.number().min(0).max(1),
   verbatim: z.boolean(),
+  /**
+   * The identifier the error is about and where the issue mentions it in the
+   * same role ("adapter" in "adapter is not a function"). "none" caps the score
+   * below the match threshold. Null when the message has no recognised shape.
+   */
+  anchor: z.object({ term: z.string(), found: z.enum(['title', 'body', 'none']) }).nullable(),
 });
 
 const Match = z.object({
@@ -165,7 +171,10 @@ const installed = (i?: InstalledPackage) =>
         topLevelVersion: i.topLevelVersion ?? null,
       }
     : null;
-const match = (m: RunResult['searches'][number]['matches'][number]) => ({ ...m, similarity: { ...m.similarity } });
+const match = (m: RunResult['searches'][number]['matches'][number]) => ({
+  ...m,
+  similarity: { ...m.similarity, anchor: m.similarity.anchor ?? null },
+});
 
 /** Convert an internal RunResult into the stable report, validated by the schema. */
 export function toReport(r: RunResult, version: string): FixedinReport {

@@ -136,8 +136,10 @@ describe('end to end (recorded)', () => {
       selectedBy: 'frame-install-path',
       topLevelVersion: '1.1.3',
     });
-    // The release check ran against the copy that threw.
     expect(r.detect.packages[0]!.otherCopies.map((x) => x.version)).toEqual(['1.1.3']);
+    // Every search hit is a different "… is not a function" bug (e.g. axios#10908,
+    // "socket.setKeepAlive is not a function"), so there is no match.
+    expect(v.kind).toBe('NO_MATCH');
     expect(strip(formatVerdicts(r, cwd, 1))).toContain(
       'You have: 0.25.0 at node_modules/wait-on/node_modules/axios (from package-lock.json) — the copy in the stack trace; top-level axios is 1.1.3',
     );

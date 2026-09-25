@@ -3,7 +3,8 @@ import { resolveToken } from '../src/github/auth.js';
 import { createGitHub } from '../src/github/client.js';
 import { createClient, type FetchLike } from '../src/net/client.js';
 import { buildQueryText, composeQ, readRateLimit, relaxedQueryText, searchRepo } from '../src/search/index.js';
-import { normalizeMessage, similarity, tokenize } from '../src/search/similarity.js';
+import { ANCHOR_MISS_CAP, extractAnchor, mentions, normalizeMessage, similarity, tokenize } from '../src/search/similarity.js';
+import { MATCH_THRESHOLD } from '../src/verdict/index.js';
 
 const axios = { owner: 'axios', repo: 'axios' };
 
@@ -75,6 +76,62 @@ describe('similarity', () => {
   it('tokenize/normalizeMessage basics', () => {
     expect(tokenize('axios.get() failed at the /api')).toEqual(['axios', 'get', 'failed', 'api']);
     expect(normalizeMessage("TypeError [ERR_X]: Can't  'x'")).toBe('cant x');
+  });
+});
+
+describe('anchors: the identifier an error is about', () => {
+  it.each([
+    ['TypeError: adapter is not a function', 'adapter'],
+    ['TypeError: axios.default.create is not a function', 'create'],
+    ['TypeError: foo(...) is not a function', 'foo'],
+    ['TypeError: Foo is not a constructor', 'Foo'],
+    ['ReferenceError: process is not defined', 'process'],
+    ['TypeError: items is not iterable', 'items'],
+    ["TypeError: Cannot read properties of undefined (reading 'headers')", 'headers'],
+    ["TypeError: Cannot read property 'headers' of undefined", 'headers'],
+    ["TypeError: Cannot set properties of null (setting 'innerHTML')", 'innerHTML'],
+    ["Error: Cannot find module '@babel/preset-env'", '@babel/preset-env'],
+    ["Module not found: Can't resolve '@vercel/analytics/react'", '@vercel/analytics/react'],
+  ])('%s → %s', (query, term) => {
+    expect(extractAnchor(query)?.term).toBe(term);
+  });
+
+  it.each(['TypeError: fetch failed', 'Error: connect ECONNREFUSED', 'SyntaxError: Cannot use import statement outside a module'])(
+    'no anchor for %s',
+    (query) => {
+      expect(extractAnchor(query)).toBeUndefined();
+    },
+  );
+
+  it('accepts both spellings of the "reading" family and both of "(...)"', () => {
+    expect(extractAnchor("TypeError: Cannot read properties of undefined (reading 'headers')")!.phrases).toEqual(['reading headers', 'property headers of']);
+    expect(extractAnchor('TypeError: foo(...) is not a function')!.phrases).toEqual(['foo is not a function', 'foo(...) is not a function']);
+  });
+
+  it('matches at identifier boundaries only', () => {
+    expect(mentions('axios.create is not a function', 'create is not a function')).toBe(true);
+    expect(mentions('recreate is not a function', 'create is not a function')).toBe(false);
+    expect(mentions('$create is not a function', 'create is not a function')).toBe(false);
+  });
+
+  it('caps an issue about a different identifier below the match threshold', () => {
+    expect(ANCHOR_MISS_CAP).toBeLessThan(MATCH_THRESHOLD);
+    // Real case: axios#10908 shares the template and even the word "adapter", but not the bug.
+    const other = similarity('TypeError: adapter is not a function', '`socket.setKeepAlive is not a function` from HTTP adapter when using certain proxy agents', '');
+    expect(other).toMatchObject({ score: ANCHOR_MISS_CAP, anchor: { term: 'adapter', found: 'none' } });
+    const same = similarity("TypeError: Cannot read properties of undefined (reading 'headers')", "Cannot read properties of undefined (reading 'headers')", '');
+    expect(same).toMatchObject({ verbatim: true, anchor: { term: 'headers', found: 'title' } });
+    expect(same.score).toBeGreaterThan(0.95);
+  });
+
+  it('counts an anchor mentioned only in the body', () => {
+    const q = 'TypeError: adapter is not a function';
+    const title = 'adapter option not working';
+    const withPhrase = similarity(q, title, 'Stack:\nTypeError: adapter is not a function\n  at dispatchRequest');
+    const without = similarity(q, title, 'Stack:\nTypeError: setKeepAlive is not a function');
+    expect(withPhrase.anchor).toEqual({ term: 'adapter', found: 'body' });
+    expect(withPhrase.score).toBeGreaterThan(MATCH_THRESHOLD);
+    expect(without).toMatchObject({ score: ANCHOR_MISS_CAP, anchor: { found: 'none' } });
   });
 });
 

@@ -89,6 +89,14 @@ describe('verdicts end-to-end (recorded)', () => {
     expect(v.fix).toBeUndefined();
   });
 
+  it('an issue about a different missing module is not a match (babel-loader#664 is about @babel/core)', async () => {
+    const r = await run(stack('webpack-loader'), { cwd: project('axios-app'), client, limit: 5, auth });
+    const loader = r.verdicts.find((v) => v.packageName === 'babel-loader')!;
+    expect(loader.kind).toBe('NO_MATCH');
+    const hit664 = r.searches.find((s) => s.repo.repo === 'babel-loader')!.matches.find((m) => m.number === 664);
+    expect(hit664?.similarity.anchor).toEqual({ term: '@babel/preset-env', found: 'none' });
+  });
+
   it('prisma: searches the renamed repo and flags a borderline match as weak', async () => {
     const cwd = project('axios-app');
     const r = await run(stack('prisma-p2002'), { cwd, client, limit: 5, auth });

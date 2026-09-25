@@ -404,13 +404,42 @@
                           },
                           "verbatim": {
                             "type": "boolean"
+                          },
+                          "anchor": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "term": {
+                                    "type": "string"
+                                  },
+                                  "found": {
+                                    "type": "string",
+                                    "enum": [
+                                      "title",
+                                      "body",
+                                      "none"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "term",
+                                  "found"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         },
                         "required": [
                           "score",
                           "title",
                           "body",
-                          "verbatim"
+                          "verbatim",
+                          "anchor"
                         ],
                         "additionalProperties": false
                       }
@@ -770,13 +799,42 @@
                     },
                     "verbatim": {
                       "type": "boolean"
+                    },
+                    "anchor": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "term": {
+                              "type": "string"
+                            },
+                            "found": {
+                              "type": "string",
+                              "enum": [
+                                "title",
+                                "body",
+                                "none"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "term",
+                            "found"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "required": [
                     "score",
                     "title",
                     "body",
-                    "verbatim"
+                    "verbatim",
+                    "anchor"
                   ],
                   "additionalProperties": false
                 }

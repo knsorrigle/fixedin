@@ -165,7 +165,8 @@ export function formatVerdicts(r: RunResult, cwd: string, limit: number): string
           : '';
       out.push(`    Fixed by: ${by}${shipped}${v.fix.evidence === 'referenced-pr-near-close' ? pc.dim(' (inferred: merged just before close)') : ''}`);
     }
-    if (v.packageName && v.kind !== 'NO_MATCH') {
+    // Shown for NO_MATCH too: it's the first thing a new bug report needs.
+    if (v.packageName) {
       out.push(`    You have: ${v.installed ? formatInstalled(v.installed, v.packageName, cwd) : pc.yellow('unknown (not installed here)')}`);
     }
     if (v.workaround) {
