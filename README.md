@@ -90,7 +90,7 @@ jobs:
 
       - name: Already fixed upstream?
         if: failure()
-        uses: knsorrigle/fixedin@v0.6.0
+        uses: knsorrigle/fixedin@v0.6.1
         with:
           log: test.log
 ```
@@ -107,7 +107,7 @@ jobs:
 
 **Why `issues: read`:** a token that can read pull requests but not issues gets *only pull requests* back from GitHub's issue search — even for `is:issue` — so every search would come back empty. fixedin detects this and reports it as a failed search (exit code 2) with the fix, rather than "no matching issue".
 
-Outputs: `fix-available` (`"true"`/`"false"`), `exit-code` (as for `--exit-code`), `report` (path to the `--json` report) and `markdown` (path to the markdown report). The action runs the fixedin release matching its tag, so `@v0.6.0` keeps behaving the same when newer versions ship. Issue titles and release notes in the comment are escaped so they can't @-mention anyone, link to issues in your repo, or inject HTML.
+Outputs: `fix-available` (`"true"`/`"false"`), `exit-code` (as for `--exit-code`), `report` (path to the `--json` report) and `markdown` (path to the markdown report). The action runs the fixedin release matching its tag, so `@v0.6.1` keeps behaving the same when newer versions ship. Issue titles and release notes in the comment are escaped so they can't @-mention anyone, link to issues in your repo, or inject HTML.
 
 ## Use in CI
 
