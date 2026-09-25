@@ -75,6 +75,7 @@ When tests fail in a pull request, fixedin can say whether the failure is alread
 ```yaml
 permissions:
   contents: read
+  issues: read           # needed for issue search once pull-requests is set (see below)
   pull-requests: write   # only for the PR comment
 
 jobs:
@@ -99,10 +100,12 @@ jobs:
 | `log` | *(required)* | File with the failing output |
 | `working-directory` | `.` | Project whose lockfile says what's installed |
 | `repo` | | Search this repo (`owner/name`) instead of detecting packages |
-| `comment` | `true` | Comment on the pull request (needs `pull-requests: write`; fork PRs get a read-only token, so it's skipped with a warning) |
+| `comment` | `true` | Comment on the pull request (needs `pull-requests: write` **and** `issues: read`; fork PRs get a read-only token, so it's skipped with a warning) |
 | `fail-on-fix` | `false` | Fail the step when a released fix exists that you don't have |
 | `github-token` | `github.token` | Token for GitHub search and the comment |
 | `version` | the action's own version | fixedin version to run from npm |
+
+**Why `issues: read`:** a token that can read pull requests but not issues gets *only pull requests* back from GitHub's issue search — even for `is:issue` — so every search would come back empty. fixedin detects this and reports it as a failed search (exit code 2) with the fix, rather than "no matching issue".
 
 Outputs: `fix-available` (`"true"`/`"false"`), `exit-code` (as for `--exit-code`), `report` (path to the `--json` report) and `markdown` (path to the markdown report). The action runs the fixedin release matching its tag, so `@v0.6.0` keeps behaving the same when newer versions ship. Issue titles and release notes in the comment are escaped so they can't @-mention anyone, link to issues in your repo, or inject HTML.
 

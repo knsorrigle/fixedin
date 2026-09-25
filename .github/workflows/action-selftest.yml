@@ -85,6 +85,54 @@ jobs:
           OUTCOME: ${{ steps.strict.outcome }}
         run: test "$OUTCOME" = failure && echo "fail-on-fix ok"
 
+  published:
+    name: Published package, run inside this repo
+    # No local build: the action installs fixedin from npm. Running inside this
+    # repo (whose package is also named "fixedin") is the case where `npx
+    # fixedin@x` used to run the wrong thing and the step still passed.
+    runs-on: ubuntu-latest
+    env:
+      FIXEDIN_REPLAY: ${{ github.workspace }}/tests/fixtures/http
+    steps:
+      - uses: actions/checkout@v7
+      - name: A failing test log
+        run: cp tests/fixtures/stacks/axios-default-create.txt test.log
+      - name: Run the action (fixedin from npm)
+        id: fixedin
+        uses: ./
+        with:
+          log: test.log
+          working-directory: tests/fixtures/projects/axios-1.1.3
+          repo: axios/axios
+          comment: 'false'
+          version: latest
+      - name: Check the outputs
+        env:
+          FIX: ${{ steps.fixedin.outputs.fix-available }}
+          CODE: ${{ steps.fixedin.outputs.exit-code }}
+          MARKDOWN: ${{ steps.fixedin.outputs.markdown }}
+        run: |
+          set -euo pipefail
+          test "$FIX" = true
+          test "$CODE" = 1
+          grep -q 'shipped in \*\*v1.2.0\*\*' "$MARKDOWN"
+          echo "published package ok"
+      - name: A version too old for the action is refused, not misread
+        id: old
+        continue-on-error: true
+        uses: ./
+        with:
+          log: test.log
+          working-directory: tests/fixtures/projects/axios-1.1.3
+          repo: axios/axios
+          comment: 'false'
+          version: 0.4.0
+      - name: Check the refusal
+        env:
+          OUTCOME: ${{ steps.old.outcome }}
+          FIX: ${{ steps.old.outputs.fix-available }}
+        run: test "$OUTCOME" = failure && test "$FIX" != true && echo "old version refused ok"
+
   live:
     name: Live GitHub API (workflow token)
     runs-on: ubuntu-latest
