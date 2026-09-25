@@ -4,6 +4,15 @@
   "description": "Paste an error, find out if it was already fixed upstream — and whether your installed version has the fix.",
   "license": "MIT",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json",
+    "./report.schema.json": "./docs/report.schema.json"
+  },
+  "types": "./dist/index.d.ts",
   "bin": {
     "fixedin": "dist/cli.js"
   },
@@ -17,6 +26,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/knsorrigle/fixedin.git"
+  },
+  "homepage": "https://github.com/knsorrigle/fixedin#readme",
+  "bugs": {
+    "url": "https://github.com/knsorrigle/fixedin/issues"
   },
   "scripts": {
     "build": "tsup",
@@ -32,7 +45,13 @@
     "issues",
     "debugging",
     "npm",
-    "semver"
+    "semver",
+    "stack-trace",
+    "lockfile",
+    "pnpm",
+    "yarn",
+    "bun",
+    "deno"
   ],
   "dependencies": {
     "@octokit/rest": "^22.0.1",

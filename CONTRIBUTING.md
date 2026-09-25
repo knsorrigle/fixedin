@@ -11,6 +11,7 @@ npm test            # vitest, no network access
 npm run typecheck
 npm run build       # tsup → dist/
 node dist/cli.js --verbose "your error here"
+npm link            # optional: puts your local build on PATH as `fixedin` (undo: npm unlink -g fixedin)
 ```
 
 Node.js 20+ is required.
@@ -69,6 +70,21 @@ For failure paths you can't record on demand (rate limits, 5xx), use a stub fetc
 - Lockfiles from real projects that fixedin misreads — the pnpm/yarn YAML reader (`src/lockfile/yaml.ts`) and Bun's JSONC handling (`stripJsonc` in `src/lockfile/bun.ts`) only accept what those tools write, and fail loudly on anything else.
 - More real-world stack traces in `tests/fixtures/stacks/` with parser expectations in `tests/parse.test.ts`.
 - New tag patterns in `TAG_PATTERNS` (`src/release/index.ts`) for repos whose release tags we don't recognise yet.
+
+## Releasing (maintainers)
+
+Releases are published to npm by [`.github/workflows/release.yml`](.github/workflows/release.yml) when a version tag is pushed. It uses npm trusted publishing, so no npm token is stored in the repo, and every release carries a provenance attestation linking it to the commit and workflow run that built it.
+
+```bash
+npm version patch   # or minor / major — bumps package.json and creates the tag
+git push --follow-tags
+```
+
+The workflow refuses to publish if the tag doesn't match `package.json`, and `prepublishOnly` stops the publish if typecheck, tests or build fail.
+
+One-time setup (0.1.0 was published manually): on npmjs.com → the package's **Settings → Trusted Publisher**, choose GitHub Actions and enter repository `knsorrigle/fixedin` and workflow `release.yml` (exact filename, case-sensitive). After that, consider setting **Publishing access** to "Require two-factor authentication and disallow tokens" so the workflow is the only way to publish.
+
+Before a release, `npm pack` and `npm install -g ./fixedin-<version>.tgz` give you exactly what users will get.
 
 ## Pull requests
 

@@ -1,0 +1,55 @@
+name: Release
+
+# Publishes to npm when a version tag is pushed:
+#   npm version patch && git push --follow-tags
+#
+# Uses npm trusted publishing (OIDC): no npm token is stored in this repo, and
+# npm attaches a provenance attestation linking the package to this workflow
+# run and commit. One-time setup on npmjs.com → package settings → Trusted
+# Publisher: GitHub Actions, repository knsorrigle/fixedin, workflow release.yml.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write # lets GitHub mint the OIDC token npm exchanges for a publish credential
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest # trusted publishing doesn't support self-hosted runners
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          # Trusted publishing needs Node >= 22.14 and npm >= 11.5.1.
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          # No dependency cache in a publishing job: a poisoned cache would ship.
+          package-manager-cache: false
+
+      - name: Ensure npm supports trusted publishing
+        run: |
+          if ! npx --yes semver@7 --range '>=11.5.1' "$(npm --version)" >/dev/null; then
+            npm install --global npm@11
+          fi
+          npm --version
+
+      - name: Tag must match package.json version
+        run: |
+          pkg="v$(node -p "require('./package.json').version")"
+          if [ "$GITHUB_REF_NAME" != "$pkg" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match package.json version $pkg. Use 'npm version <patch|minor|major>' to create the tag."
+            exit 1
+          fi
+
+      - run: npm ci
+
+      # prepublishOnly runs typecheck, tests and build; the publish stops if any fail.
+      - run: npm publish

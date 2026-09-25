@@ -1,5 +1,6 @@
 # fixedin
 
+[![npm](https://img.shields.io/npm/v/fixedin)](https://www.npmjs.com/package/fixedin)
 [![CI](https://github.com/knsorrigle/fixedin/actions/workflows/ci.yml/badge.svg)](https://github.com/knsorrigle/fixedin/actions/workflows/ci.yml)
 
 **Paste an error. Find out if it was already fixed upstream, in which release, and whether _your_ installed version has the fix.**
@@ -24,16 +25,19 @@ No LLM, no embeddings, no vector database — it uses GitHub's own hybrid (seman
 
 ## Install
 
-Requires Node.js 20+. fixedin isn't on npm yet; run it from source:
+Requires Node.js 20+.
 
 ```bash
-git clone https://github.com/knsorrigle/fixedin.git && cd fixedin
-npm install && npm run build
-npm link            # puts `fixedin` on your PATH
-fixedin --help
+npx fixedin "TypeError: Cannot read properties of undefined (reading 'headers')"
 ```
 
-Once published, `npx fixedin "<error>"` will work without installing.
+or install it once and use `fixedin` anywhere:
+
+```bash
+npm install -g fixedin
+```
+
+To hack on it, see [CONTRIBUTING.md](CONTRIBUTING.md) for running from source.
 
 ## Usage
 
