@@ -1,0 +1,14 @@
+ERROR in ./src/index.js
+Module build failed (from ./node_modules/babel-loader/lib/index.js):
+Error: Cannot find module '@babel/preset-env'
+Require stack:
+- C:\Users\alex\projects\site\node_modules\@babel\core\lib\config\files\plugins.js
+- C:\Users\alex\projects\site\node_modules\@babel\core\lib\config\files\index.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1145:15)
+    at resolve (node:internal/modules/cjs/helpers:190:19)
+    at tryRequireResolve (C:\Users\alex\projects\site\node_modules\@babel\core\lib\config\files\plugins.js:128:11)
+    at resolveStandardizedName (C:\Users\alex\projects\site\node_modules\@babel\core\lib\config\files\plugins.js:143:14)
+    at loadPreset (C:\Users\alex\projects\site\node_modules\@babel\core\lib\config\files\plugins.js:81:7) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ ... ]
+}

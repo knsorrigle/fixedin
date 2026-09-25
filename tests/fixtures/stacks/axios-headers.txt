@@ -1,0 +1,8 @@
+TypeError: Cannot read properties of undefined (reading 'headers')
+    at settle (/Users/dev/shop-api/node_modules/axios/lib/core/settle.js:19:34)
+    at IncomingMessage.handleStreamEnd (/Users/dev/shop-api/node_modules/axios/lib/adapters/http.js:572:11)
+    at IncomingMessage.emit (node:events:531:35)
+    at endReadableNT (node:internal/streams/readable:1696:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+    at Axios.request (/Users/dev/shop-api/node_modules/axios/lib/core/Axios.js:45:41)
+    at async fetchOrders (/Users/dev/shop-api/src/orders.ts:14:20)

@@ -1,0 +1,10 @@
+export { parseError, cleanQuery, extractErrorCodes, extractPackages } from './parse/index.js';
+export type { ParsedError, PackageCandidate } from './parse/index.js';
+export { locateLockfile, openLockfile, parsePackageLock, findInNodeModules } from './lockfile/index.js';
+export type { InstalledPackage, LockfileReader, LockfileKind } from './lockfile/index.js';
+export { resolveRepo, parseRepository, parseGitHubUrl } from './resolve/index.js';
+export type { RepoRef, ResolvedRepo } from './resolve/index.js';
+export { detect } from './detect.js';
+export type { DetectResult, DetectedPackage } from './detect.js';
+export { createClient, defaultClient, replayFetch, recordingFetch } from './net/client.js';
+export type { NetClient, FetchLike } from './net/client.js';

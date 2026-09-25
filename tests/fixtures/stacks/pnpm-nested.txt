@@ -1,0 +1,8 @@
+TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received undefined
+    at new NodeError (node:internal/errors:405:5)
+    at validateString (node:internal/validators:162:11)
+    at Object.join (node:path:1171:7)
+    at getCacheDir (/Users/lee/mono/node_modules/.pnpm/find-cache-dir@3.3.2/node_modules/find-cache-dir/index.js:33:20)
+    at Object.<anonymous> (/Users/lee/mono/node_modules/.pnpm/babel-loader@9.1.3_@babel+core@7.23.2_webpack@5.89.0/node_modules/babel-loader/lib/cache.js:22:14)
+    at Module._compile (node:internal/modules/cjs/loader:1256:14)
+    at 0x7ffee4b8a0c0 request 3f2504e0-4f89-11d3-9a0c-0305e82c3301

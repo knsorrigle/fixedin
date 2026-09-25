@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://registry.npmjs.org/@jest%2Fcore/latest"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cf-cache-status": "DYNAMIC",
+      "cf-ray": "a408be66785d0d93-MAA",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Fri, 25 Sep 2026 08:43:53 GMT",
+      "server": "cloudflare",
+      "transfer-encoding": "chunked"
+    },
+    "body": "{\"bugs\":{\"url\":\"https://github.com/jestjs/jest/issues\"},\"dist\":{\"shasum\":\"79ca6ec15ec407380a9202e861aee314c294c9f3\",\"tarball\":\"https://registry.npmjs.org/@jest/core/-/core-30.5.2.tgz\",\"fileCount\":6,\"integrity\":\"sha512-/jqvFWoJF7LV1a6AUpYMbMm+2yIYsHJfR474H0SCzr9k8tnO/jl9wRg6zSG6lxgf6EozNlCG4amFzWsbZSvvZA==\",\"signatures\":[{\"sig\":\"MEYCIQDtjzwm8l60JlDCriyGt1pGMpS3W2eKxZ/+qahcxyjMBwIhAMzOHPZKcpCoJY1yFsHL965pDR3p15gChA4QyfJl9uTy\",\"keyid\":\"SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U\"},{\"sig\":\"MEUCIQCCt43VoXcQI4FYw/u1WsKtZePW734njZjcxLJREuDrogIgaBy4/IPqCiEqeRvqzn6YdjRZDqn/YfsL95/i+cbVXmo=\",\"keyid\":\"SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U\"}],\"unpackedSize\":148809},\"main\":\"./build/index.js\",\"name\":\"@jest/core\",\"types\":\"./build/index.d.ts\",\"engines\":{\"node\":\"^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0\"},\"exports\":{\".\":{\"types\":\"./build/index.d.ts\",\"import\":\"./build/index.mjs\",\"default\":\"./build/index.js\",\"require\":\"./build/index.js\"},\"./package.json\":\"./package.json\"},\"gitHead\":\"202dd8a14777c270607c2416bd5034c3c0abc984\",\"license\":\"MIT\",\"_npmUser\":{\"name\":\"simenb\",\"email\":\"sbekkhus91@gmail.com\"},\"homepage\":\"https://jestjs.io/\",\"keywords\":[\"ava\",\"babel\",\"coverage\",\"easy\",\"expect\",\"facebook\",\"immersive\",\"instant\",\"jasmine\",\"jest\",\"jsdom\",\"mocha\",\"mocking\",\"painless\",\"qunit\",\"runner\",\"sandboxed\",\"snapshot\",\"tap\",\"tape\",\"test\",\"testing\",\"typescript\",\"watch\"],\"repository\":{\"url\":\"git+https://github.com/jestjs/jest.git\",\"type\":\"git\",\"directory\":\"packages/jest-core\"},\"_npmVersion\":\"lerna/4.11.5/node@v26.8.1+arm64 (darwin)\",\"description\":\"Delightful JavaScript Testing.\",\"directories\":{},\"maintainers\":[{\"name\":\"aaronabramov\",\"email\":\"aaron@abramov.io\"},{\"name\":\"simenb\",\"email\":\"sbekkhus91@gmail.com\"},{\"name\":\"rickhanlonii\",\"email\":\"rickhanlonii@gmail.com\"},{\"name\":\"openjs-operations\",\"email\":\"operations@openjsf.org\"},{\"name\":\"cpojer\",\"email\":\"christoph.pojer@gmail.com\"}],\"_nodeVersion\":\"26.8.1\",\"dependencies\":{\"chalk\":\"^4.1.2\",\"slash\":\"^3.0.0\",\"exit-x\":\"^0.2.2\",\"ci-info\":\"^4.2.0\",\"jest-util\":\"30.5.1\",\"@jest/types\":\"30.5.1\",\"@types/node\":\"*\",\"graceful-fs\":\"^4.2.11\",\"jest-config\":\"30.5.2\",\"jest-runner\":\"30.5.2\",\"ansi-escapes\":\"^4.3.2\",\"jest-resolve\":\"30.5.1\",\"jest-runtime\":\"30.5.2\",\"jest-watcher\":\"30.5.2\",\"@jest/console\":\"30.5.2\",\"@jest/pattern\":\"30.5.0\",\"jest-snapshot\":\"30.5.2\",\"jest-validate\":\"30.5.1\",\"pretty-format\":\"30.5.1\",\"jest-haste-map\":\"30.5.1\",\"@jest/reporters\":\"30.5.2\",\"@jest/transform\":\"30.5.2\",\"jest-regex-util\":\"30.5.0\",\"@jest/test-result\":\"30.5.2\",\"jest-message-util\":\"30.5.1\",\"jest-changed-files\":\"30.5.1\",\"jest-resolve-dependencies\":\"30.5.2\",\"fast-json-stable-stringify\":\"^2.1.0\"},\"publishConfig\":{\"access\":\"public\"},\"_hasShrinkwrap\":false,\"devDependencies\":{\"@jest/test-utils\":\"30.5.2\",\"@types/graceful-fs\":\"^4.1.9\",\"@jest/test-sequencer\":\"30.5.2\"},\"peerDependencies\":{\"node-notifier\":\"^8.0.1 || ^9.0.0 || ^10.0.0\"},\"peerDependenciesMeta\":{\"node-notifier\":{\"optional\":true}},\"_npmOperationalInternal\":{\"tmp\":\"tmp/core_30.5.2_1789739832236_0.532168015580661\",\"host\":\"s3://npm-registry-packages-npm-production\"},\"_id\":\"@jest/core@30.5.2\",\"version\":\"30.5.2\"}"
+  }
+}

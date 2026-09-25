@@ -1,0 +1,8 @@
+failed to load config from /Users/kim/app/vite.config.ts
+error when starting dev server:
+Error [ERR_REQUIRE_ESM]: require() of ES Module /Users/kim/app/node_modules/@vitejs/plugin-react/dist/index.mjs not supported.
+Instead change the require of index.mjs in /Users/kim/app/vite.config.ts.timestamp-1700000000000-7c1e9a2b3d4f5.mjs to a dynamic import() which is available in all CommonJS modules.
+    at Object.<anonymous> (/Users/kim/app/vite.config.ts.timestamp-1700000000000-7c1e9a2b3d4f5.mjs:5:28)
+    at loadConfigFromBundledFile (file:///Users/kim/app/node_modules/vite/dist/node/chunks/dep-8f5c9b2e.js:66654:15)
+    at async loadConfigFromFile (file:///Users/kim/app/node_modules/vite/dist/node/chunks/dep-8f5c9b2e.js:66493:24)
+    at async createServer (file:///Users/kim/app/node_modules/vite/dist/node/chunks/dep-8f5c9b2e.js:66090:28)

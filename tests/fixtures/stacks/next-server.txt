@@ -1,0 +1,14 @@
+ ⨯ TypeError: fetch failed
+    at node:internal/deps/undici/undici:13502:13
+    at async invokeRequest (/Users/sam/code/blog/node_modules/next/dist/server/lib/server-ipc/invoke-request.js:17:12)
+    at async Object.handler (/Users/sam/code/blog/node_modules/next/dist/server/lib/router-server.js:344:28)
+    at async Server.requestListener (/Users/sam/code/blog/node_modules/next/dist/server/lib/start-server.js:140:13) {
+  digest: '2817362914',
+  [cause]: Error: getaddrinfo ENOTFOUND api.internal
+      at GetAddrInfoReqWrap.onlookup [as oncomplete] (node:dns:118:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'api.internal'
+  }
+}

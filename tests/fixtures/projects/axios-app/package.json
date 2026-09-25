@@ -1,0 +1,1 @@
+{"name":"axios-app","version":"1.0.0","private":true,"dependencies":{"@prisma/client":"^5.7.1","axios":"^1.5.0","react-dom":"^18.2.0"}}

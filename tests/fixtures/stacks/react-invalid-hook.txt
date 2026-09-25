@@ -1,0 +1,9 @@
+Warning: Invalid hook call. Hooks can only be called inside of the body of a function component.
+Uncaught TypeError: Cannot read properties of null (reading 'useState')
+    at useState (http://localhost:3000/static/js/bundle.js:62311:25)
+    at App (http://localhost:3000/main.4f3a9c1e2b7d8a60.js:1:4412)
+    at renderWithHooks (webpack-internal:///./node_modules/react-dom/cjs/react-dom.development.js:16305:18)
+    at mountIndeterminateComponent (webpack-internal:///./node_modules/react-dom/cjs/react-dom.development.js:20074:13)
+    at beginWork (webpack-internal:///./node_modules/react-dom/cjs/react-dom.development.js:21587:16)
+    at HTMLUnknownElement.callCallback (webpack-internal:///./node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (webpack-internal:///./node_modules/react-dom/cjs/react-dom.development.js:4213:16)

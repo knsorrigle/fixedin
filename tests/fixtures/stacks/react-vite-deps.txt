@@ -1,0 +1,6 @@
+Uncaught Error: Objects are not valid as a React child (found: object with keys {id, name}). If you meant to render a collection of children, use an array instead.
+    at throwOnInvalidObjectType (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a1b2c3d4:9934:17)
+    at reconcileChildFibersImpl (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a1b2c3d4:10365:15)
+    at useQuery (http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=a1b2c3d4:3120:11)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-RLJ2RCJQ.js?v=a1b2c3d4:19:7
+    at UserList (http://localhost:5173/src/UserList.tsx:12:5)

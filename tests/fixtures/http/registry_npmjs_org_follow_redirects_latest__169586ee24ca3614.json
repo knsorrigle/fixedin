@@ -1,0 +1,23 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://registry.npmjs.org/follow-redirects/latest"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "max-age=300",
+      "cf-cache-status": "DYNAMIC",
+      "cf-ray": "a408be60aa638010-MAA",
+      "connection": "keep-alive",
+      "content-encoding": "gzip",
+      "content-type": "application/json",
+      "date": "Fri, 25 Sep 2026 08:43:52 GMT",
+      "server": "cloudflare",
+      "transfer-encoding": "chunked",
+      "vary": "accept-encoding, accept"
+    },
+    "body": "{\"bugs\":{\"url\":\"https://github.com/follow-redirects/follow-redirects/issues\"},\"dist\":{\"shasum\":\"28474a159d3b9d11ef62050a14ed60e4df6d61bc\",\"tarball\":\"https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.16.0.tgz\",\"fileCount\":7,\"integrity\":\"sha512-y5rN/uOsadFT/JfYwhxRS5R7Qce+g3zG97+JrtFZlC9klX/W5hD7iiLzScI4nZqUS7DNUdhPgw4xI8W2LuXlUw==\",\"signatures\":[{\"sig\":\"MEQCIAlmIKUMCu7ZO+tvv33RkvWcpQHqixrai1CcJS9FSLL9AiB4QMrHaTv6rk8r0m2byvSJvCX5Iv3iihrFWy8DkeTELw==\",\"keyid\":\"SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U\"}],\"unpackedSize\":30614},\"main\":\"index.js\",\"name\":\"follow-redirects\",\"author\":{\"url\":\"https://ruben.verborgh.org/\",\"name\":\"Ruben Verborgh\",\"email\":\"ruben@verborgh.org\"},\"engines\":{\"node\":\">=4.0\"},\"funding\":[{\"url\":\"https://github.com/sponsors/RubenVerborgh\",\"type\":\"individual\"}],\"gitHead\":\"0c23a223067201c368035e82954c11eb2578a33b\",\"license\":\"MIT\",\"scripts\":{\"lint\":\"eslint *.js test\",\"test\":\"nyc mocha\"},\"_npmUser\":{\"name\":\"rubenverborgh\",\"email\":\"ruben@verborgh.org\"},\"homepage\":\"https://github.com/follow-redirects/follow-redirects\",\"keywords\":[\"http\",\"https\",\"url\",\"redirect\",\"client\",\"location\",\"utility\"],\"repository\":{\"url\":\"git+ssh://git@github.com/follow-redirects/follow-redirects.git\",\"type\":\"git\"},\"_npmVersion\":\"10.9.3\",\"description\":\"HTTP and HTTPS modules that follow redirects.\",\"directories\":{},\"maintainers\":[{\"name\":\"rubenverborgh\",\"email\":\"ruben@verborgh.org\"},{\"name\":\"olalonde\",\"email\":\"olalonde@gmail.com\"}],\"_nodeVersion\":\"22.18.0\",\"contributors\":[{\"url\":\"http://www.syskall.com\",\"name\":\"Olivier Lalonde\",\"email\":\"olalonde@gmail.com\"},{\"name\":\"James Talmage\",\"email\":\"james@talmage.io\"}],\"_hasShrinkwrap\":false,\"devDependencies\":{\"nyc\":\"^14.1.1\",\"lolex\":\"^3.1.0\",\"mocha\":\"^6.0.2\",\"eslint\":\"^5.16.0\",\"express\":\"^4.16.4\",\"concat-stream\":\"^2.0.0\"},\"peerDependenciesMeta\":{\"debug\":{\"optional\":true}},\"_npmOperationalInternal\":{\"tmp\":\"tmp/follow-redirects_1.16.0_1776078225094_0.10274239368541882\",\"host\":\"s3://npm-registry-packages-npm-production\"},\"_id\":\"follow-redirects@1.16.0\",\"version\":\"1.16.0\"}"
+  }
+}

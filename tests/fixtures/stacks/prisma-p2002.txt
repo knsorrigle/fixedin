@@ -1,0 +1,16 @@
+PrismaClientKnownRequestError: 
+Invalid `prisma.user.create()` invocation in
+/home/app/src/routes/signup.ts:27:36
+
+  24 const hashed = await bcrypt.hash(password, 10)
+→ 27 const user = await prisma.user.create(
+Unique constraint failed on the fields: (`email`)
+    at In.handleRequestError (/home/app/node_modules/@prisma/client/runtime/library.js:121:7753)
+    at In.handleAndLogRequestError (/home/app/node_modules/@prisma/client/runtime/library.js:121:7061)
+    at In.request (/home/app/node_modules/@prisma/client/runtime/library.js:121:6745)
+    at async l (/home/app/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async signup (/home/app/src/routes/signup.ts:27:18) {
+  code: 'P2002',
+  clientVersion: '5.7.1',
+  meta: { modelName: 'User', target: [ 'email' ] }
+}
