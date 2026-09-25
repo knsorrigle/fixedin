@@ -39,11 +39,25 @@ export interface InstalledPackage {
 
 export interface LockfileReader {
   kind: LockfileKind;
+  /** yarn only: classic (v1) and Berry (v2+) need different commands. */
+  flavor?: 'classic' | 'berry';
   file: string;
   /** All installed copies of `name`, top-level first. */
   find(name: string): InstalledPackage[];
   /** Non-fatal problems found while reading (reported as diagnostics). */
   warnings?: string[];
+  /**
+   * Installed packages whose copy of `name` resolves to `version` — who pulled
+   * it in. Projects/workspaces themselves are not included (they're "direct").
+   */
+  dependents?(name: string, version: string): Dependent[];
+}
+
+export interface Dependent {
+  name: string;
+  version: string;
+  /** Range it declares for the dependency, when the lockfile records ranges (npm, yarn, bun). */
+  range?: string;
 }
 
 export class LockfileError extends Error {
@@ -111,11 +125,23 @@ export function openLockfile(loc: LocatedLockfile, cwd?: string): LockfileReader
 // package-lock.json v1 (npm 5–6) and v2/v3 (npm 7+)
 // ---------------------------------------------------------------------------
 
-type PackagesMap = Record<string, { version?: string; name?: string; link?: boolean; resolved?: string }>;
+type PackagesMap = Record<
+  string,
+  {
+    version?: string;
+    name?: string;
+    link?: boolean;
+    resolved?: string;
+    dependencies?: Record<string, string>;
+    optionalDependencies?: Record<string, string>;
+  }
+>;
 
 interface V1Dependency {
   version?: string;
   dev?: boolean;
+  /** v1's name → range map of what this package depends on. */
+  requires?: Record<string, string>;
   dependencies?: Record<string, V1Dependency>;
 }
 
@@ -166,6 +192,7 @@ export function flattenV1(deps: Record<string, V1Dependency>, lockDir: string, p
     } else {
       out[location] = { version: raw };
     }
+    if (dep.requires) out[location]!.dependencies = dep.requires;
     if (dep.dependencies) Object.assign(out, flattenV1(dep.dependencies, lockDir, `${location}/`));
   }
   return out;
@@ -207,7 +234,40 @@ export function parsePackageLock(json: PackageLockJson, path: string): LockfileR
       }
       return out.sort((a, b) => Number(b.topLevel) - Number(a.topLevel) || a.location.length - b.location.length);
     },
+    dependents(name, version) {
+      const out: Dependent[] = [];
+      for (const [location, entry] of Object.entries(packages)) {
+        if (!location.includes('node_modules/')) continue; // root / workspace folders are the project
+        const deps = { ...entry.optionalDependencies, ...entry.dependencies };
+        for (const [depKey, range] of Object.entries(deps)) {
+          // The installed folder is the dependency key; an alias range names the real package.
+          const real = range.match(/^npm:(@?[^@]+)@/)?.[1] ?? depKey;
+          if (real !== name) continue;
+          const copy = resolveFrom(packages, location, depKey);
+          if (!copy || packages[copy]?.version !== version) continue;
+          const i = location.lastIndexOf('node_modules/');
+          const self = packages[location]!;
+          out.push({ name: self.name ?? location.slice(i + 'node_modules/'.length), version: self.version ?? '?', range });
+        }
+      }
+      return out;
+    },
   };
+}
+
+/**
+ * Node's lookup: from a package at `from`, `require(dep)` checks
+ * from/node_modules/dep, then each enclosing node_modules up to the root.
+ */
+export function resolveFrom(packages: Record<string, unknown>, from: string, dep: string): string | undefined {
+  let cur = from;
+  for (;;) {
+    const candidate = `${cur ? `${cur}/` : ''}node_modules/${dep}`;
+    if (candidate in packages) return candidate;
+    if (!cur) return undefined;
+    const i = cur.lastIndexOf('/node_modules/');
+    cur = i === -1 ? '' : cur.slice(0, i);
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -5,6 +5,7 @@
  */
 import { basename, dirname } from 'node:path';
 import { Diagnostics } from './diagnostics.js';
+import { declaredDependencies, relationOf, type Relation } from './relation.js';
 import {
   findInNodeModules,
   locateLockfile,
@@ -24,17 +25,21 @@ export interface DetectedPackage {
   /** Other copies at different versions (nested node_modules). */
   otherCopies: InstalledPackage[];
   repo?: ResolvedRepo;
+  /** Direct dependency, or pulled in by something else (and by what). */
+  relation: Relation;
 }
 
 export interface DetectResult {
   parsed: ParsedError;
-  lockfile?: { kind: LockfileReader['kind']; file: string };
+  lockfile?: { kind: LockfileReader['kind']; flavor?: LockfileReader['flavor']; file: string };
   packages: DetectedPackage[];
   /** Set when --repo was given. */
   explicitRepo?: RepoRef;
   diagnostics: Diagnostics;
   /** Look up another package's installed version (used to link --repo to a package). */
   lookupInstalled: (name: string) => { installed?: InstalledPackage; otherCopies: InstalledPackage[] };
+  /** Relation of another package (used when --repo links to a package not in the trace). */
+  relationOf: (name: string, installed: InstalledPackage | undefined) => Relation;
 }
 
 /** Every known copy of `name`: lockfile first, then node_modules (capped at the lockfile's directory). */
@@ -181,9 +186,12 @@ export async function detect(input: string, opts: DetectOptions): Promise<Detect
     );
   }
 
+  const declared = declaredDependencies(opts.cwd, reader ? dirname(reader.file) : undefined);
+  for (const p of declared.problems) diagnostics.warn('lockfile', p);
+
   const packages = await Promise.all(
     selected.map(async (candidate): Promise<DetectedPackage> => {
-      const det: DetectedPackage = { candidate, otherCopies: [] };
+      const det: DetectedPackage = { candidate, otherCopies: [], relation: { kind: 'unknown', reason: 'not installed' } };
 
       const { copies, tried } = findCopies(opts.cwd, reader, candidate.name, diagnostics);
       const chosen = selectCopy(candidate.name, candidate.copy, copies);
@@ -200,6 +208,13 @@ export async function detect(input: string, opts: DetectOptions): Promise<Detect
         }
       } else {
         notInstalledWarning(candidate.name, reader, tried, diagnostics);
+      }
+      det.relation = relationOf(candidate.name, det.installed, reader, declared.names);
+      if (det.relation.kind === 'transitive') {
+        diagnostics.info(
+          'lockfile',
+          `${candidate.name}@${det.installed!.version} is a transitive dependency: ${[...det.relation.chain].reverse().map((d) => `${d.name}@${d.version}`).join(' → ')} → ${candidate.name}.`,
+        );
       }
 
       if (!explicitRepo) {
@@ -218,8 +233,9 @@ export async function detect(input: string, opts: DetectOptions): Promise<Detect
 
   return {
     parsed,
-    ...(reader ? { lockfile: { kind: reader.kind, file: reader.file } } : {}),
+    ...(reader ? { lockfile: { kind: reader.kind, ...(reader.flavor ? { flavor: reader.flavor } : {}), file: reader.file } } : {}),
     lookupInstalled: (name: string) => lookupInstalled(opts.cwd, reader, name, diagnostics),
+    relationOf: (name: string, installed: InstalledPackage | undefined) => relationOf(name, installed, reader, declared.names),
     packages,
     ...(explicitRepo ? { explicitRepo } : {}),
     diagnostics,

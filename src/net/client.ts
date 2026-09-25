@@ -86,7 +86,7 @@ async function describeRequest(input: string | URL | Request, init?: RequestInit
  * Drop fields fixedin never reads from bulky responses, so fixtures stay
  * reviewable. Only whole fields are removed; nothing is rewritten.
  *   compare:   ~470KB of files/commits → status counts
- *   packument: readme, per-version dependency trees → version, gitHead, time
+ *   packument: readme, per-version metadata → version, gitHead, dependency ranges, time
  */
 export function slimFixtureBody(url: string, body: string): string {
   let json: Record<string, unknown>;
@@ -102,7 +102,14 @@ export function slimFixtureBody(url: string, body: string): string {
   if (/^https:\/\/registry\.npmjs\.org\/[^/]+(%2[fF][^/]+)?$/.test(url) && json.versions && typeof json.versions === 'object') {
     const versions: Record<string, unknown> = {};
     for (const [v, m] of Object.entries(json.versions as Record<string, Record<string, unknown>>)) {
-      versions[v] = { version: m.version, ...(m.gitHead ? { gitHead: m.gitHead } : {}), ...(m.repository ? { repository: m.repository } : {}) };
+      versions[v] = {
+        version: m.version,
+        ...(m.gitHead ? { gitHead: m.gitHead } : {}),
+        ...(m.repository ? { repository: m.repository } : {}),
+        // remedy/ reads which range each release declares for its dependencies.
+        ...(m.dependencies ? { dependencies: m.dependencies } : {}),
+        ...(m.optionalDependencies ? { optionalDependencies: m.optionalDependencies } : {}),
+      };
     }
     return JSON.stringify({ name: json.name, 'dist-tags': json['dist-tags'], versions, time: json.time });
   }

@@ -16,7 +16,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import semver from 'semver';
-import type { InstalledPackage, LockfileReader } from './index.js';
+import type { Dependent, InstalledPackage, LockfileReader } from './index.js';
 import { LockfileError } from './index.js';
 import { selectImporter } from './pnpm.js';
 import { parseYamlSubset, YamlSubsetError, type YamlMap } from './yaml.js';
@@ -110,15 +110,18 @@ function sortedCopies(name: string, versions: Iterable<string>, exclude: string 
 export interface ClassicEntry {
   keys: string[];
   version: string;
+  /** name → range, from the entry's dependencies / optionalDependencies blocks. */
+  dependencies: Record<string, string>;
 }
 
 export function parseClassic(text: string, path: string): ClassicEntry[] {
   const entries: ClassicEntry[] = [];
-  let current: { keys: string[]; version?: string; line: number } | undefined;
+  let current: { keys: string[]; version?: string; line: number; deps: Record<string, string> } | undefined;
+  let inDeps = false;
   const flush = () => {
     if (!current) return;
     if (!current.version) throw new LockfileError(`Could not parse ${path}: entry at line ${current.line} has no version.`, [path]);
-    entries.push({ keys: current.keys, version: current.version });
+    entries.push({ keys: current.keys, version: current.version, dependencies: current.deps });
     current = undefined;
   };
   text.split(/\r?\n/).forEach((line, i) => {
@@ -126,11 +129,20 @@ export function parseClassic(text: string, path: string): ClassicEntry[] {
     if (!/^\s/.test(line)) {
       flush();
       if (!line.endsWith(':')) throw new LockfileError(`Could not parse ${path}: line ${i + 1} is not an entry header.`, [path]);
-      current = { keys: splitKeyList(line.slice(0, -1)), line: i + 1 };
+      current = { keys: splitKeyList(line.slice(0, -1)), line: i + 1, deps: {} };
+      inDeps = false;
       return;
     }
-    const m = line.match(/^ {2}version:? "?([^"\s]+)"?\s*$/);
-    if (m && current) current.version = m[1]!;
+    if (!current) return;
+    if (/^ {2}\S/.test(line)) {
+      inDeps = /^ {2}(dependencies|optionalDependencies):\s*$/.test(line);
+      const m = line.match(/^ {2}version:? "?([^"\s]+)"?\s*$/);
+      if (m) current.version = m[1]!;
+      return;
+    }
+    // '    follow-redirects "^1.15.0"' or '    "@scope/pkg" "^1.0.0"'
+    const dep = inDeps ? line.match(/^ {4}"?([^"\s]+)"?\s+"?([^"]+?)"?\s*$/) : null;
+    if (dep) current.deps[dep[1]!] = dep[2]!;
   });
   flush();
   return entries;
@@ -177,10 +189,24 @@ function classicReader(text: string, path: string, cwd: string): LockfileReader 
 
   return {
     kind: 'yarn',
+    flavor: 'classic',
     file: path,
     find(name) {
       const d = direct(name);
       return [...(d ? [d] : []), ...sortedCopies(name, versionsByName.get(name) ?? [], d?.version, path)];
+    },
+    dependents(name, version) {
+      const out: Dependent[] = [];
+      for (const e of entries) {
+        for (const [dep, range] of Object.entries(e.dependencies)) {
+          if ((aliasTarget(range) ?? dep) !== name) continue;
+          if (byKey.get(`${dep}@${range}`)?.version !== version) continue;
+          const self = splitDescriptor(e.keys[0]!);
+          const selfName = self ? (aliasTarget(self.range) ?? self.name) : e.keys[0]!;
+          if (!out.some((d) => d.name === selfName && d.version === e.version)) out.push({ name: selfName, version: e.version, range });
+        }
+      }
+      return out;
     },
   };
 }
@@ -312,6 +338,7 @@ function berryReader(text: string, path: string, cwd: string): LockfileReader {
 
   return {
     kind: 'yarn',
+    flavor: 'berry',
     file: path,
     warnings,
     find(name) {
@@ -328,6 +355,20 @@ function berryReader(text: string, path: string, cwd: string): LockfileReader {
         }
       }
       return [...(direct ? [direct] : []), ...sortedCopies(name, versionsByName.get(name) ?? [], direct?.version, path)];
+    },
+    dependents(name, version) {
+      const out: Dependent[] = [];
+      for (const e of entries) {
+        if (e.workspacePath !== undefined) continue; // the project itself
+        for (const [dep, range] of Object.entries(e.dependencies)) {
+          const target = byDescriptor.get(`${dep}@${normalizeBerryRange(range)}`);
+          if (!target || target.name !== name || target.version !== version) continue;
+          // yarn ≥3 writes "npm:^1.15.0"; the plain range is what semver (and people) read.
+          const plain = range.replace(/^npm:(?=[\^~<>=*\d])/, '');
+          if (!out.some((d) => d.name === e.name && d.version === e.version)) out.push({ name: e.name, version: e.version, range: plain });
+        }
+      }
+      return out;
     },
   };
 }

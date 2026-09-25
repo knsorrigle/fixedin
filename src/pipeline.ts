@@ -7,7 +7,9 @@ import { resolveToken, type AuthResult } from './github/auth.js';
 import { createGitHub, describeGitHubError } from './github/client.js';
 import type { NetClient } from './net/client.js';
 import type { InstalledPackage } from './lockfile/index.js';
-import { fetchPackument, findFixRelease, type Containment, type ContainmentChecker, type ReleaseResult } from './release/index.js';
+import { fetchPackument, findFixRelease, type Containment, type ContainmentChecker, type Packument, type ReleaseResult } from './release/index.js';
+import type { Relation } from './relation.js';
+import { packageManagerOf, planRemedy, type PackageManager } from './remedy/index.js';
 import { ResolveError, resolveRepo, type RepoRef } from './resolve/index.js';
 import { canonicalizeRepo, searchRepo, type IssueMatch, type RepoSearchResult } from './search/index.js';
 import { traceFix, type TraceResult } from './trace/index.js';
@@ -130,7 +132,9 @@ export async function run(input: string, opts: RunOptions): Promise<RunResult> {
     searches.push({ ...r, packages: t.packages });
 
     const pkg = await linkPackage(opts.client, d, t, target, diag);
-    verdicts.push(await judge(gh, opts.client, target, r, pkg, diag));
+    const v = await judge(gh, opts.client, target, r, pkg, packageManagerOf(d.lockfile), diag);
+    if (pkg) v.relation = pkg.relation;
+    verdicts.push(v);
   }
 
   return { detect: d, auth: { source: auth.source }, searches, verdicts };
@@ -139,6 +143,7 @@ export async function run(input: string, opts: RunOptions): Promise<RunResult> {
 interface LinkedPackage {
   name: string;
   installed?: InstalledPackage;
+  relation: Relation;
 }
 
 /**
@@ -156,7 +161,11 @@ async function linkPackage(
   const fromTrace = t.packages[0];
   if (fromTrace) {
     const p = d.packages.find((x) => x.candidate.name === fromTrace);
-    return { name: fromTrace, ...(p?.installed ? { installed: p.installed } : {}) };
+    return {
+      name: fromTrace,
+      ...(p?.installed ? { installed: p.installed } : {}),
+      relation: p?.relation ?? { kind: 'unknown', reason: 'not installed' },
+    };
   }
   const same = (r: RepoRef) =>
     [t.repo, canonical].some((x) => `${x.owner}/${x.repo}`.toLowerCase() === `${r.owner}/${r.repo}`.toLowerCase());
@@ -172,7 +181,7 @@ async function linkPackage(
       if (same(r)) {
         diag.info('resolve', `Linked --repo ${canonical.owner}/${canonical.repo} to npm package ${name}.`);
         const found = d.lookupInstalled(name);
-        return { name, ...(found.installed ? { installed: found.installed } : {}) };
+        return { name, ...(found.installed ? { installed: found.installed } : {}), relation: d.relationOf(name, found.installed) };
       }
       tried.push(`${name} → ${r.owner}/${r.repo} (different repo)`);
     } catch (err) {
@@ -190,6 +199,7 @@ async function judge(
   repo: RepoRef,
   search: RepoSearchResult,
   pkg: LinkedPackage | undefined,
+  pm: PackageManager,
   diag: Diagnostics,
 ): Promise<Verdict> {
   const name = `${repo.owner}/${repo.repo}`;
@@ -268,9 +278,10 @@ async function judge(
 
     let release: (ReleaseResult & { checker: ContainmentChecker }) | undefined;
     let installedProbe: Containment | undefined;
+    let packument: Packument | undefined;
     if (pkg) {
       try {
-        const packument = await fetchPackument(client, pkg.name);
+        packument = await fetchPackument(client, pkg.name);
         const installedVersion = pkg.installed?.version;
         const major = installedVersion ? semverMajor(installedVersion) : undefined;
         release = await findFixRelease(gh, repo, packument, trace.fix.sha, {
@@ -297,6 +308,28 @@ async function judge(
       ...(installedProbe ? { installedProbe } : {}),
     });
     if (trace.duplicateOf) v.reasons.unshift(`#${match.number} was closed as a duplicate of #${trace.duplicateOf}.`);
+
+    // A transitive copy can't just be "upgraded": say what actually gets the fix in.
+    if (v.kind === 'FIXED_UPSTREAM_UPGRADE' && v.fixedIn && pkg?.installed && packument && pkg.relation.kind === 'transitive') {
+      try {
+        const remedy = await planRemedy({
+          name: pkg.name,
+          installedVersion: pkg.installed.version,
+          fixedIn: v.fixedIn,
+          relation: pkg.relation,
+          pm,
+          packument,
+          client,
+        });
+        if (remedy) {
+          v.remedy = remedy;
+          v.advice = remedy.summary;
+          v.reasons.push(`${pkg.name}@${pkg.installed.version} comes from ${remedy.parent.name}@${remedy.parent.version}, which declares ${remedy.parent.range}.`);
+        }
+      } catch (err) {
+        diag.warn('release', `Could not work out how to get ${pkg.name} >=${v.fixedIn} into the project (it's a dependency of ${pkg.relation.chain[0]!.name}): ${(err as Error).message}`);
+      }
+    }
     return v;
   }
   return fallback!;

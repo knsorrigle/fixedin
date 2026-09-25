@@ -15,7 +15,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import semver from 'semver';
-import type { InstalledPackage, LockfileReader } from './index.js';
+import type { Dependent, InstalledPackage, LockfileReader } from './index.js';
 import { LockfileError } from './index.js';
 import { parseYamlSubset, splitDocuments, YamlSubsetError, type YamlMap, type YamlValue } from './yaml.js';
 
@@ -192,6 +192,25 @@ export function parsePnpmLock(text: string, path: string, cwd: string = dirname(
       versions.sort((a, b) => (semver.valid(a) && semver.valid(b) ? semver.rcompare(a, b) : a.localeCompare(b)));
       for (const version of versions) {
         out.push({ name, version, location: `node_modules/.pnpm/${name.replace('/', '+')}@${version}/node_modules/${name}`, topLevel: false, source: path });
+      }
+      return out;
+    },
+    dependents(name, version) {
+      // v9 keeps each copy's dependencies under `snapshots`; v5/v6 under `packages`.
+      // Values are exact resolved versions (with peer suffixes), so no range here.
+      const section = asMap(doc[major >= 9 ? 'snapshots' : 'packages']) ?? {};
+      const out: Dependent[] = [];
+      for (const [key, value] of Object.entries(section)) {
+        const self = parsePackageKey(key, major);
+        const entry = asMap(value);
+        if (!self || !entry) continue;
+        const deps = { ...asMap(entry.optionalDependencies), ...asMap(entry.dependencies) };
+        const hit = Object.entries(deps).some(([dep, raw]) => {
+          if (typeof raw !== 'string') return false;
+          const r = resolveDepVersion(dep, raw, major);
+          return r.kind === 'version' && r.ref.name === name && r.ref.version === version;
+        });
+        if (hit && !out.some((d) => d.name === self.name && d.version === self.version)) out.push({ name: self.name, version: self.version });
       }
       return out;
     },

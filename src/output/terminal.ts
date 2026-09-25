@@ -169,12 +169,24 @@ export function formatVerdicts(r: RunResult, cwd: string, limit: number): string
     if (v.packageName) {
       out.push(`    You have: ${v.installed ? formatInstalled(v.installed, v.packageName, cwd) : pc.yellow('unknown (not installed here)')}`);
     }
+    if (v.relation?.kind === 'transitive') {
+      const parent = v.remedy?.parent ?? v.relation.chain[0]!;
+      const also = v.relation.via.length > 1 ? pc.dim(` and ${v.relation.via.length - 1} other package${v.relation.via.length > 2 ? 's' : ''}`) : '';
+      const up = v.relation.chain.length > 1 ? pc.dim(` ← ${v.relation.chain.slice(1).map((d) => `${d.name}@${d.version}`).join(' ← ')}`) : '';
+      out.push(`    Comes from: ${pc.cyan(`${parent.name}@${parent.version}`)}${parent.range ? pc.dim(` (requires ${v.packageName} ${parent.range})`) : ''}${up}${also}`);
+    }
     if (v.workaround) {
       out.push(`    Workaround: ${pc.cyan(v.workaround.url)} ${pc.dim(`by @${v.workaround.author}, ${v.workaround.reactions} 👍`)}`);
       for (const line of v.workaround.excerpt.split('\n')) out.push(pc.dim(`      │ ${line}`));
     }
     const adviceColor = v.kind === 'FIXED_UPSTREAM_UPGRADE' ? pc.bold : (s: string) => s;
     out.push(`    → ${adviceColor(v.advice)}`);
+    if (v.remedy?.note && v.remedy.command) out.push(pc.dim(`      (${v.remedy.note})`));
+    if (v.remedy?.override) {
+      const label = v.remedy.kind === 'override' ? 'package.json:' : 'or force it in package.json:';
+      out.push(`      ${pc.dim(label)} ${v.remedy.override.snippet}`);
+      out.push(pc.dim(`      (${v.remedy.override.note})`));
+    }
 
     const others = (r.searches[idx]?.matches ?? []).filter((m) => m.number !== v.match?.number).slice(0, Math.max(0, limit - 1));
     if (others.length) {

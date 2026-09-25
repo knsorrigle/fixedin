@@ -4,7 +4,8 @@
  * consumers. Additive changes keep schemaVersion; breaking ones bump it.
  */
 import { z } from 'zod';
-import type { InstalledPackage } from '../lockfile/index.js';
+import type { Dependent, InstalledPackage } from '../lockfile/index.js';
+import type { Relation } from '../relation.js';
 import type { RunResult } from '../pipeline.js';
 
 export const SCHEMA_VERSION = 1;
@@ -96,10 +97,34 @@ const SearchAttempt = z.object({
   skipped: z.string().nullable(),
 });
 
+const DependentSchema = z.object({ name: z.string(), version: z.string(), range: z.string().nullable() });
+
+const Dependency = z.object({
+  /** direct: the project lists it; transitive: another package pulled it in; unknown: couldn't tell. */
+  kind: z.enum(['direct', 'transitive', 'unknown']),
+  /** Packages whose copy is the one that threw (transitive only). */
+  via: z.array(DependentSchema),
+  /** From the first parent up to a package the project lists itself. */
+  chain: z.array(DependentSchema),
+  reason: z.string().nullable(),
+});
+
+const Remedy = z.object({
+  kind: z.enum(['refresh', 'upgrade-parent', 'override']),
+  parent: z.object({ name: z.string(), version: z.string(), range: z.string() }),
+  command: z.string().nullable(),
+  note: z.string().nullable(),
+  upgradeParentTo: z.object({ version: z.string(), range: z.string().nullable(), majorBump: z.boolean() }).nullable(),
+  override: z.object({ snippet: z.string(), note: z.string() }).nullable(),
+  summary: z.string(),
+});
+
 const Result = z.object({
   repo: Repo,
   package: z.string().nullable(),
   installed: Installed.nullable(),
+  /** How the package got into the project; null when no package is linked. */
+  dependency: Dependency.nullable(),
   verdict: z.object({
     kind: VerdictKindSchema,
     advice: z.string(),
@@ -112,6 +137,8 @@ const Result = z.object({
     /** Direct check of the installed version's source. */
     installedHasFix: z.enum(['contains', 'missing', 'unknown']).nullable(),
     workaround: Workaround.nullable(),
+    /** For a transitive copy: what actually gets the fix in (refresh / upgrade the parent / override). */
+    remedy: Remedy.nullable(),
   }),
   search: z.object({
     /** Mode GitHub reports it actually ran. */
@@ -171,6 +198,11 @@ const installed = (i?: InstalledPackage) =>
         topLevelVersion: i.topLevelVersion ?? null,
       }
     : null;
+const dep = (d: Dependent) => ({ name: d.name, version: d.version, range: d.range ?? null });
+const dependency = (r: Relation) =>
+  r.kind === 'transitive'
+    ? { kind: r.kind, via: r.via.map(dep), chain: r.chain.map(dep), reason: null }
+    : { kind: r.kind, via: [], chain: [], reason: r.kind === 'unknown' ? r.reason : null };
 const match = (m: RunResult['searches'][number]['matches'][number]) => ({
   ...m,
   similarity: { ...m.similarity, anchor: m.similarity.anchor ?? null },
@@ -198,6 +230,7 @@ export function toReport(r: RunResult, version: string): FixedinReport {
         repo: repo(v.repo),
         package: v.packageName ?? null,
         installed: installed(v.installed),
+        dependency: v.relation ? dependency(v.relation) : null,
         verdict: {
           kind: v.kind,
           advice: v.advice,
@@ -219,6 +252,17 @@ export function toReport(r: RunResult, version: string): FixedinReport {
           latest: v.latest ?? null,
           installedHasFix: v.installedHasFix ?? null,
           workaround: v.workaround ?? null,
+          remedy: v.remedy
+            ? {
+                kind: v.remedy.kind,
+                parent: v.remedy.parent,
+                command: v.remedy.command ?? null,
+                note: v.remedy.note ?? null,
+                upgradeParentTo: v.remedy.upgradeParentTo ?? null,
+                override: v.remedy.override ?? null,
+                summary: v.remedy.summary,
+              }
+            : null,
         },
         search: {
           mode: s.modeUsed,

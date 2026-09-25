@@ -14,7 +14,7 @@
 import { dirname } from 'node:path';
 import { readFileSync } from 'node:fs';
 import semver from 'semver';
-import type { InstalledPackage, LockfileReader } from './index.js';
+import type { Dependent, InstalledPackage, LockfileReader } from './index.js';
 import { LockfileError } from './index.js';
 import { selectImporter } from './pnpm.js';
 
@@ -114,6 +114,26 @@ export function parseDenoLock(text: string, path: string, cwd: string = dirname(
         ...(top ? [top] : []),
         ...others.map((version) => ({ name, version, location: `node_modules/${name}`, topLevel: false, source: path })),
       ];
+    },
+    dependents(name, version) {
+      const out: Dependent[] = [];
+      for (const [key, value] of Object.entries(npm)) {
+        const self = splitNameAt(key);
+        const raw = (value as { dependencies?: string[] | Record<string, string> } | null)?.dependencies;
+        if (!self || !raw) continue;
+        // v3: { dep: "dep@1.2.3_peer@4" }; v4/v5: ["dep", …] or ["dep@1.2.3", …] when ambiguous.
+        const refs = Array.isArray(raw) ? raw : Object.values(raw);
+        const hit = refs.some((ref) => {
+          const p = splitNameAt(ref);
+          if (p) return p.name === name && stripDenoPeers(p.rest) === version;
+          // Bare name: only unambiguous when a single version is locked.
+          const vs = versionsByName.get(ref);
+          return ref === name && vs?.size === 1 && vs.has(version);
+        });
+        const selfVersion = stripDenoPeers(self.rest);
+        if (hit && !out.some((d) => d.name === self.name && d.version === selfVersion)) out.push({ name: self.name, version: selfVersion });
+      }
+      return out;
     },
   };
 }

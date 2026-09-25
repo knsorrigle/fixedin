@@ -301,6 +301,91 @@
               }
             ]
           },
+          "dependency": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "direct",
+                      "transitive",
+                      "unknown"
+                    ]
+                  },
+                  "via": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "string"
+                        },
+                        "range": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "version",
+                        "range"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "chain": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "string"
+                        },
+                        "range": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "version",
+                        "range"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "reason": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "via",
+                  "chain",
+                  "reason"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "verdict": {
             "type": "object",
             "properties": {
@@ -605,6 +690,124 @@
                     "type": "null"
                   }
                 ]
+              },
+              "remedy": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "refresh",
+                          "upgrade-parent",
+                          "override"
+                        ]
+                      },
+                      "parent": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "string"
+                          },
+                          "range": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "version",
+                          "range"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "command": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "note": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "upgradeParentTo": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "version": {
+                                "type": "string"
+                              },
+                              "range": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "majorBump": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "version",
+                              "range",
+                              "majorBump"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "override": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "snippet": {
+                                "type": "string"
+                              },
+                              "note": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "snippet",
+                              "note"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "summary": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "parent",
+                      "command",
+                      "note",
+                      "upgradeParentTo",
+                      "override",
+                      "summary"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             },
             "required": [
@@ -616,7 +819,8 @@
               "fixedIn",
               "latest",
               "installedHasFix",
-              "workaround"
+              "workaround",
+              "remedy"
             ],
             "additionalProperties": false
           },
@@ -861,6 +1065,7 @@
           "repo",
           "package",
           "installed",
+          "dependency",
           "verdict",
           "search",
           "matches"

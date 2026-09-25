@@ -102,6 +102,20 @@ error text ─► parse ─► lockfile ─► resolve ─► search ─► trac
 5. **trace** — reads the issue's GraphQL timeline for the fix: the PR or commit that closed it, a linked PR, or (flagged as inferred) a same-repo PR merged just before a manual close. References from other repos — usually downstream "bump dependency" PRs — are ignored. Duplicates are followed one hop.
 6. **release** — finds the earliest npm release whose source contains the fix's merge commit. Each version maps to a commit through npm's `gitHead`, or a git tag (`v1.2.3`, `1.2.3`, `pkg@1.2.3`, …) when `gitHead` is missing. Containment is `GET /repos/{o}/{r}/compare/{fix}...{release}` (`ahead`/`identical` = contains). Versions are binary-searched, limited to releases published after the merge and on or above your major version, so it's a handful of API calls, not hundreds.
 7. **verdict** — compares with your installed version. The installed release is also checked directly against the fix commit, which beats semver when fixes are backported.
+8. **remedy** — "upgrade to >=X" only works for packages you depend on directly. When the copy that threw was pulled in by another package, fixedin finds that parent in the lockfile, reads the range it declares, and tells you what actually gets the fix in:
+
+   ```
+   You have: 1.1.3 (from package-lock.json)
+   Comes from: @nestjs/axios@1.0.0 (requires axios 1.1.3)
+   → Upgrade @nestjs/axios to >=1.0.1 (it requires axios 1.2.1, which has the fix)
+     or force it in package.json: {"overrides":{"@nestjs/axios":{"axios":"^1.2.0"}}}
+   ```
+
+   - **refresh** — the parent's range already allows a fixed version and only your lockfile is stale (`npm update axios`, `pnpm update axios`, `yarn up -R axios`, `bun update axios`; for yarn 1 and Deno, the steps that actually work)
+   - **upgrade the parent** — to its first release whose range includes the fix (or that drops the dependency), flagging major upgrades
+   - **override** — when no parent release accepts the fix, in your package manager's syntax (`overrides`, `pnpm.overrides`, `resolutions`)
+
+   Every command and override form was checked against the real package managers.
 
 Every failure is reported with what was tried and why it failed — use `--verbose` to see all of it.
 

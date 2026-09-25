@@ -1,0 +1,8 @@
+{
+  "name": "line-bot",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@line/bot-sdk": "8.4.1"
+  }
+}

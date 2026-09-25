@@ -13,6 +13,8 @@ import type { Containment, ReleaseResult } from '../release/index.js';
 import type { RepoRef } from '../resolve/index.js';
 import type { IssueMatch } from '../search/index.js';
 import type { FixRef, TraceResult } from '../trace/index.js';
+import type { Relation } from '../relation.js';
+import type { Remedy } from '../remedy/index.js';
 
 export type VerdictKind =
   | 'FIXED_UPSTREAM_UPGRADE'
@@ -50,6 +52,10 @@ export interface Verdict {
   workaround?: Workaround;
   /** One-line recommendation. */
   advice: string;
+  /** Direct dependency, or pulled in by another package (set for any verdict with a linked package). */
+  relation?: Relation;
+  /** For a transitive copy with a released fix: refresh, upgrade the parent, or override. */
+  remedy?: Remedy;
   /** Why we reached this verdict, for --verbose and --json. */
   reasons: string[];
 }

@@ -19,7 +19,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import semver from 'semver';
-import type { InstalledPackage, LockfileReader } from './index.js';
+import type { Dependent, InstalledPackage, LockfileReader } from './index.js';
 import { LockfileError } from './index.js';
 import { selectImporter } from './pnpm.js';
 
@@ -179,7 +179,50 @@ export function parseBunLock(text: string, path: string, cwd: string = dirname(p
         ...others.map((version) => ({ name, version, location: `node_modules/${name}`, topLevel: false, source: path })),
       ];
     },
+    dependents(name, version) {
+      const out: Dependent[] = [];
+      for (const [key, entry] of Object.entries(packages)) {
+        const self = resolveKey(key);
+        if (!self || self.workspace || !Array.isArray(entry)) continue;
+        const meta = entry.find((x): x is BunMeta => typeof x === 'object' && x !== null && !Array.isArray(x)) ?? {};
+        const deps = { ...meta.optionalDependencies, ...meta.dependencies };
+        for (const [dep, range] of Object.entries(deps)) {
+          const copy = resolveBunKey(packages, key, dep);
+          const r = copy ? resolveKey(copy) : undefined;
+          if (!r || r.name !== name || r.version !== version) continue;
+          if (!out.some((d) => d.name === self.name && d.version === self.version)) out.push({ name: self.name, version: self.version, range });
+        }
+      }
+      return out;
+    },
   };
+}
+
+interface BunMeta {
+  dependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+}
+
+/** "@mono/web/@scope/pkg/axios" → ["@mono/web", "@scope/pkg", "axios"] */
+export function splitBunPath(key: string): string[] {
+  const parts = key.split('/');
+  const out: string[] = [];
+  for (let i = 0; i < parts.length; i++) out.push(parts[i]!.startsWith('@') && i + 1 < parts.length ? `${parts[i]}/${parts[++i]}` : parts[i]!);
+  return out;
+}
+
+/**
+ * Bun keys packages by install path ("wait-on/axios" is the axios only wait-on
+ * sees). From the package at `from`, `dep` resolves like Node: the deepest
+ * "from…/dep" that exists, walking up to the hoisted "dep".
+ */
+export function resolveBunKey(packages: Record<string, unknown>, from: string, dep: string): string | undefined {
+  const chain = splitBunPath(from);
+  for (let n = chain.length; n >= 0; n--) {
+    const candidate = [...chain.slice(0, n), dep].join('/');
+    if (candidate in packages) return candidate;
+  }
+  return undefined;
 }
 
 export function readBunLock(path: string, cwd: string = dirname(path)): LockfileReader {

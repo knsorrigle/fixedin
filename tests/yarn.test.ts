@@ -45,7 +45,7 @@ describe('yarn descriptor helpers', () => {
 
   it('parses classic entries and fails loudly on malformed ones', () => {
     const text = '# yarn lockfile v1\n\n\n"a@^1.0.0", a@^1.1.0:\n  version "1.2.0"\n  resolved "x"\n  dependencies:\n    b "^2"\n';
-    expect(parseClassic(text, 'yarn.lock')).toEqual([{ keys: ['a@^1.0.0', 'a@^1.1.0'], version: '1.2.0' }]);
+    expect(parseClassic(text, 'yarn.lock')).toEqual([{ keys: ['a@^1.0.0', 'a@^1.1.0'], version: '1.2.0', dependencies: { b: '^2' } }]);
     expect(() => parseClassic('a@^1:\n  resolved "x"\n', 'yarn.lock')).toThrow(/line 1 has no version/);
     expect(() => parseClassic('not a header\n', 'yarn.lock')).toThrow(/line 1 is not an entry header/);
   });
