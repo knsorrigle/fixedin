@@ -1,6 +1,6 @@
 {
   "name": "fixedin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI that matches an error to upstream GitHub issues, traces the fixing PR to the first npm release that ships it, and checks your lockfile. No LLM, no embeddings.",
   "license": "MIT",
   "type": "module",
