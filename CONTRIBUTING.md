@@ -22,7 +22,7 @@ Each pipeline stage is its own module with a pure core that's tested without I/O
 | Module | Job | Pure parts to test |
 |---|---|---|
 | `src/parse/` | error text → query, error codes, candidate packages | everything |
-| `src/lockfile/` | installed versions (package-lock v2/v3, pnpm-lock 5.x/6.0/9.0; yarn stubbed) | `parsePackageLock`, `parsePnpmLock`, `parseYamlSubset` |
+| `src/lockfile/` | installed versions (package-lock v2/v3, pnpm-lock 5.x/6.0/9.0, yarn classic + Berry) | `parsePackageLock`, `parsePnpmLock`, `parseYarnLock`, `parseYamlSubset` |
 | `src/resolve/` | npm package → GitHub repo | `parseRepository`, `parseGitHubUrl` |
 | `src/search/` | GitHub hybrid issue search + local similarity | `buildQueryText`, `similarity` |
 | `src/trace/` | issue → fixing PR/commit via GraphQL timeline | `pickFix` |
@@ -53,7 +53,7 @@ FIXEDIN_RECORD=tests/fixtures/http node dist/cli.js --cwd tests/fixtures/project
 - Recording bypasses the cache, writes one JSON file per request, never stores `Authorization` headers, and keeps only the fields fixedin reads from compare responses and packuments. Check `git diff` before committing anyway — no tokens should appear (`grep -rE "gh[pousr]_|github_pat_" tests/fixtures` should print nothing).
 - GitHub's hybrid search is limited to 10 requests/minute; space out recordings.
 - To replay a case through the CLI exactly as the tests do: `FIXEDIN_REPLAY=tests/fixtures/http node dist/cli.js …`.
-- Need a project with a specific installed version? `npm install --package-lock-only --ignore-scripts <pkg>@<version>` in a new `tests/fixtures/projects/<name>/` directory creates a real lockfile without a `node_modules`. For pnpm, write the `package.json` and run `npx pnpm@<major> install --lockfile-only --ignore-scripts` (the `pnpm-v*` fixtures cover pnpm 7, 8, 9 and 12).
+- Need a project with a specific installed version? `npm install --package-lock-only --ignore-scripts <pkg>@<version>` in a new `tests/fixtures/projects/<name>/` directory creates a real lockfile without a `node_modules`. For pnpm, write the `package.json` and run `npx pnpm@<major> install --lockfile-only --ignore-scripts` (the `pnpm-v*` fixtures cover pnpm 7, 8, 9 and 12). For yarn classic, `npx yarn@1.22.22 install --ignore-scripts`; for Berry, `touch yarn.lock && npx -p @yarnpkg/cli-dist@<version> yarn install --mode=update-lockfile` (yarn 3+), then delete `.yarn/` and `node_modules/`.
 
 For failure paths you can't record on demand (rate limits, 5xx), use a stub fetch — see `tests/search.test.ts` and `tests/net.test.ts`.
 
@@ -66,8 +66,8 @@ For failure paths you can't record on demand (rate limits, 5xx), use a stub fetc
 
 ## Good first contributions
 
-- A `yarn.lock` reader (`src/lockfile/index.ts` — the interface is already defined; keep it dependency-free like the pnpm reader in `src/lockfile/pnpm.ts`). Classic (v1) and Berry (v2+) formats differ; start with whichever you can generate real fixtures for.
-- pnpm lockfiles from real projects that fixedin misreads — `src/lockfile/yaml.ts` handles only the YAML subset pnpm writes, and fails loudly with a line number on anything else.
+- A `bun.lock` reader (Bun's text lockfile, JSONC). The `LockfileReader` interface in `src/lockfile/index.ts` is all it needs to implement; keep it dependency-free like the pnpm and yarn readers.
+- Lockfiles from real projects that fixedin misreads — `src/lockfile/yaml.ts` handles only the YAML subset pnpm and yarn write, and fails loudly with a line number on anything else.
 - More real-world stack traces in `tests/fixtures/stacks/` with parser expectations in `tests/parse.test.ts`.
 - New tag patterns in `TAG_PATTERNS` (`src/release/index.ts`) for repos whose release tags we don't recognise yet.
 

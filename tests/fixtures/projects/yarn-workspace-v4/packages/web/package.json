@@ -1,0 +1,9 @@
+{
+  "name": "@mono/web",
+  "version": "0.1.0",
+  "dependencies": {
+    "@mono/ui": "workspace:*",
+    "axios": "1.1.3",
+    "string-width-cjs": "npm:string-width@4.2.3"
+  }
+}

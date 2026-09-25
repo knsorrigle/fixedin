@@ -83,11 +83,11 @@ describe('locateLockfile', () => {
     expect(tried[0]).toBe(join(dir, 'packages/web/package-lock.json'));
   });
 
-  it('detects yarn.lock but reports it as not yet supported', () => {
+  it('detects yarn.lock and reports an empty one clearly', () => {
     const dir = tmp({ 'yarn.lock': '' });
     const { found } = locateLockfile(dir);
     expect(found?.kind).toBe('yarn');
-    expect(() => openLockfile(found!)).toThrow(/not implemented yet/);
+    expect(() => openLockfile(found!)).toThrow(/yarn\.lock is empty/);
   });
 });
 

@@ -2,15 +2,17 @@
  * lockfile/: figure out which version of a package is actually installed.
  *
  * Implemented: package-lock.json / npm-shrinkwrap.json (lockfileVersion 2 & 3),
- *              pnpm-lock.yaml (lockfileVersion 5.x, 6.0, 9.0 — see ./pnpm.ts).
- * Stubbed:     yarn.lock — detected, but reported as unsupported.
+ *              pnpm-lock.yaml (lockfileVersion 5.x, 6.0, 9.0 — see ./pnpm.ts),
+ *              yarn.lock (classic v1 and Berry v2+ — see ./yarn.ts).
  * Fallback:    node_modules/<pkg>/package.json when no supported lockfile exists.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { readPnpmLock } from './pnpm.js';
+import { readYarnLock } from './yarn.js';
 
 export { readPnpmLock, parsePnpmLock } from './pnpm.js';
+export { readYarnLock, parseYarnLock } from './yarn.js';
 
 export type LockfileKind = 'package-lock' | 'pnpm' | 'yarn';
 
@@ -30,6 +32,8 @@ export interface LockfileReader {
   file: string;
   /** All installed copies of `name`, top-level first. */
   find(name: string): InstalledPackage[];
+  /** Non-fatal problems found while reading (reported as diagnostics). */
+  warnings?: string[];
 }
 
 export class LockfileError extends Error {
@@ -73,7 +77,7 @@ export function locateLockfile(cwd: string): { found?: LocatedLockfile; tried: s
   }
 }
 
-/** `cwd` picks the workspace importer in pnpm lockfiles (which package you're running from). */
+/** `cwd` picks the workspace (which package you're running from) in pnpm and yarn lockfiles. */
 export function openLockfile(loc: LocatedLockfile, cwd?: string): LockfileReader {
   switch (loc.kind) {
     case 'package-lock':
@@ -81,7 +85,7 @@ export function openLockfile(loc: LocatedLockfile, cwd?: string): LockfileReader
     case 'pnpm':
       return readPnpmLock(loc.path, cwd);
     case 'yarn':
-      return readYarnLock(loc.path);
+      return readYarnLock(loc.path, cwd);
   }
 }
 
@@ -133,17 +137,6 @@ export function parsePackageLock(json: PackageLockJson, path: string): LockfileR
       return out.sort((a, b) => Number(b.topLevel) - Number(a.topLevel) || a.location.length - b.location.length);
     },
   };
-}
-
-// ---------------------------------------------------------------------------
-// yarn.lock — stubbed; the interface is final, the parser is not written yet.
-// ---------------------------------------------------------------------------
-
-export function readYarnLock(path: string): LockfileReader {
-  throw new LockfileError(
-    `Found ${path}, but yarn.lock parsing is not implemented yet (package-lock.json and pnpm-lock.yaml are supported). Falling back to node_modules.`,
-    [path],
-  );
 }
 
 // ---------------------------------------------------------------------------

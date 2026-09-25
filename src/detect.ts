@@ -135,6 +135,8 @@ export async function detect(input: string, opts: DetectOptions): Promise<Detect
     }),
   );
 
+  for (const w of new Set(reader?.warnings ?? [])) diagnostics.warn('lockfile', w);
+
   return {
     parsed,
     ...(reader ? { lockfile: { kind: reader.kind, file: reader.file } } : {}),

@@ -1,0 +1,11 @@
+{
+  "name": "catalog-app",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "axios": "catalog:"
+  },
+  "devDependencies": {
+    "semver": "catalog:dev"
+  }
+}

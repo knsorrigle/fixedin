@@ -1,6 +1,6 @@
 export { parseError, cleanQuery, extractErrorCodes, extractPackages } from './parse/index.js';
 export type { ParsedError, PackageCandidate } from './parse/index.js';
-export { locateLockfile, openLockfile, parsePackageLock, parsePnpmLock, readPnpmLock, findInNodeModules } from './lockfile/index.js';
+export { locateLockfile, openLockfile, parsePackageLock, parsePnpmLock, readPnpmLock, parseYarnLock, readYarnLock, findInNodeModules } from './lockfile/index.js';
 export type { InstalledPackage, LockfileReader, LockfileKind } from './lockfile/index.js';
 export { resolveRepo, parseRepository, parseGitHubUrl } from './resolve/index.js';
 export type { RepoRef, ResolvedRepo } from './resolve/index.js';
