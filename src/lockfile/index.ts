@@ -3,18 +3,21 @@
  *
  * Implemented: package-lock.json / npm-shrinkwrap.json (lockfileVersion 2 & 3),
  *              pnpm-lock.yaml (lockfileVersion 5.x, 6.0, 9.0 — see ./pnpm.ts),
- *              yarn.lock (classic v1 and Berry v2+ — see ./yarn.ts).
+ *              yarn.lock (classic v1 and Berry v2+ — see ./yarn.ts),
+ *              bun.lock (lockfileVersion 0–2 — see ./bun.ts; binary bun.lockb is detected, not read).
  * Fallback:    node_modules/<pkg>/package.json when no supported lockfile exists.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { readPnpmLock } from './pnpm.js';
 import { readYarnLock } from './yarn.js';
+import { readBunLock } from './bun.js';
 
 export { readPnpmLock, parsePnpmLock } from './pnpm.js';
 export { readYarnLock, parseYarnLock } from './yarn.js';
+export { readBunLock, parseBunLock } from './bun.js';
 
-export type LockfileKind = 'package-lock' | 'pnpm' | 'yarn';
+export type LockfileKind = 'package-lock' | 'pnpm' | 'yarn' | 'bun';
 
 export interface InstalledPackage {
   name: string;
@@ -51,6 +54,9 @@ const CANDIDATES: Array<{ file: string; kind: LockfileKind }> = [
   { file: 'npm-shrinkwrap.json', kind: 'package-lock' },
   { file: 'pnpm-lock.yaml', kind: 'pnpm' },
   { file: 'yarn.lock', kind: 'yarn' },
+  { file: 'bun.lock', kind: 'bun' },
+  // Binary; detected so we can say how to convert it (bun.lock wins if both exist).
+  { file: 'bun.lockb', kind: 'bun' },
 ];
 
 export interface LocatedLockfile {
@@ -77,7 +83,7 @@ export function locateLockfile(cwd: string): { found?: LocatedLockfile; tried: s
   }
 }
 
-/** `cwd` picks the workspace (which package you're running from) in pnpm and yarn lockfiles. */
+/** `cwd` picks the workspace (which package you're running from) in pnpm, yarn and bun lockfiles. */
 export function openLockfile(loc: LocatedLockfile, cwd?: string): LockfileReader {
   switch (loc.kind) {
     case 'package-lock':
@@ -86,6 +92,8 @@ export function openLockfile(loc: LocatedLockfile, cwd?: string): LockfileReader
       return readPnpmLock(loc.path, cwd);
     case 'yarn':
       return readYarnLock(loc.path, cwd);
+    case 'bun':
+      return readBunLock(loc.path, cwd);
   }
 }
 

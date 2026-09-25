@@ -54,7 +54,7 @@ pbpaste | fixedin --json | jq '.results[].verdict.kind'
 
 | Flag | Default | |
 |---|---|---|
-| `--cwd <dir>` | current dir | Project whose lockfile to read (searches upward, so monorepo packages work; in pnpm workspaces it also picks which package's dependencies count) |
+| `--cwd <dir>` | current dir | Project whose lockfile to read (searches upward, so monorepo packages work; in pnpm, yarn and Bun workspaces it also picks which package's dependencies count) |
 | `--repo <owner/name>` | detected | Search this repo instead of the ones found in the stack trace |
 | `--limit <n>` | `5` | Matches to show per repo |
 | `--json` | | Stable JSON output (see [schema](#json-output)) |
@@ -81,7 +81,7 @@ error text ─► parse ─► lockfile ─► resolve ─► search ─► trac
 ```
 
 1. **parse** — picks the error line, strips paths / line:col / hex addresses / UUIDs / IPs, extracts error codes (`ERR_*`, errno codes, Prisma `P####`), and collects packages from `node_modules/<pkg>/` stack frames (including pnpm and Vite's `.vite/deps` paths) and "Cannot find module" messages. Test-runner frames (jest, vitest, …) are ranked last.
-2. **lockfile** — reads the installed version from `package-lock.json` (v2/v3), `pnpm-lock.yaml` (pnpm 7+, lockfile versions 5.x/6.0/9.0) or `yarn.lock` (classic yarn 1 and Berry yarn 2+, including `npm:` aliases and yarn catalogs), falling back to `node_modules/<pkg>/package.json`. In a workspace, the package containing `--cwd` decides which version counts, so `packages/web` and `packages/api` can get different verdicts for the same error. No YAML library is involved: a small reader handles the subset pnpm and yarn write, and fails with a line number on anything else.
+2. **lockfile** — reads the installed version from `package-lock.json` (v2/v3), `pnpm-lock.yaml` (pnpm 7+, lockfile versions 5.x/6.0/9.0) `yarn.lock` (classic yarn 1 and Berry yarn 2+, including `npm:` aliases and yarn catalogs) or `bun.lock` (Bun 1.1.39+), falling back to `node_modules/<pkg>/package.json`. Bun's older binary `bun.lockb` can't be read; fixedin says how to convert it. In a workspace, the package containing `--cwd` decides which version counts, so `packages/web` and `packages/api` can get different verdicts for the same error. No YAML or JSONC library is involved: small readers handle exactly what pnpm, yarn and Bun write, and fail with a line number or reason on anything else.
 3. **resolve** — maps each package to its GitHub repo via the `repository` field on npm (handles `git+https`, `github:` shorthand, ssh URLs and monorepo `directory`), then asks GitHub for the repo's current name (search doesn't follow renames, e.g. `prisma/prisma` → `prisma/orm`).
 4. **search** — `GET /search/issues` with `search_type=hybrid`, scoped to `repo:<owner/name> is:issue`. GitHub reports which mode actually ran; fixedin records it and falls back to lexical search when hybrid is unavailable. Because GitHub scores every hit `1.0`, results are re-ranked locally by weighted word overlap with the title and body, with a bonus when the message appears verbatim.
 5. **trace** — reads the issue's GraphQL timeline for the fix: the PR or commit that closed it, a linked PR, or (flagged as inferred) a same-repo PR merged just before a manual close. References from other repos — usually downstream "bump dependency" PRs — are ignored. Duplicates are followed one hop.
@@ -129,7 +129,7 @@ Every optional field is present as `null` rather than omitted. Additive changes 
 
 ## Limitations
 
-- npm packages only in v1 (via `package-lock.json`, `pnpm-lock.yaml` or `yarn.lock`). Bun's `bun.lock` isn't read yet; fixedin falls back to `node_modules`.
+- npm packages only in v1 (via `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock` or `bun.lock`). Not read yet: npm 6's `lockfileVersion: 1`, Bun's binary `bun.lockb`, and Deno's `deno.lock` — fixedin reports which it found and falls back to `node_modules`.
 - Errors thrown from your own code have no `node_modules/` frames, so fixedin can't guess the package — use `--repo`.
 - The similarity score is word overlap, not semantic understanding. Common messages ("Unique constraint failed", "fetch failed") match many unrelated issues; watch for the *weak match* label.
 - The release search assumes containment is monotonic in semver order after the merge date. Cherry-picked backports can break that; the direct check of your installed version guards the verdict itself.

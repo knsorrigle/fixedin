@@ -56,7 +56,8 @@
               "enum": [
                 "package-lock",
                 "pnpm",
-                "yarn"
+                "yarn",
+                "bun"
               ]
             },
             "path": {

@@ -118,7 +118,7 @@ export const ReportSchema = z.object({
     query: z.string(),
     errorCodes: z.array(z.string()),
   }),
-  lockfile: z.object({ kind: z.enum(['package-lock', 'pnpm', 'yarn']), path: z.string() }).nullable(),
+  lockfile: z.object({ kind: z.enum(['package-lock', 'pnpm', 'yarn', 'bun']), path: z.string() }).nullable(),
   auth: z.object({ source: z.enum(['GITHUB_TOKEN', 'GH_TOKEN', 'gh auth token', 'none']) }),
   packages: z.array(
     z.object({
