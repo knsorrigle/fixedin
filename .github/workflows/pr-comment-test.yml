@@ -24,6 +24,7 @@ jobs:
           exit 1
 
       - name: Already fixed upstream?
+        id: fixedin
         if: failure()
         # This branch's own action, unbuilt: installs fixedin from npm exactly as
         # a released tag would, but with the fixed action/run.sh.
@@ -32,3 +33,19 @@ jobs:
           log: test.log
           working-directory: tests/fixtures/projects/axios-1.1.3
           repo: axios/axios
+
+      - name: Debug — what the search returned
+        if: always()
+        env:
+          REPORT: ${{ steps.fixedin.outputs.report }}
+        run: |
+          node -e "
+            const r = JSON.parse(require('fs').readFileSync(process.env.REPORT, 'utf8'));
+            console.log('auth:', r.auth.source);
+            for (const x of r.results) {
+              console.log('repo', x.repo.owner + '/' + x.repo.repo, '| verdict', x.verdict.kind, '| mode', x.search.mode, '| total', x.search.totalCount);
+              for (const a of x.search.attempts) console.log('  attempt', a.requested, '->', a.used, a.totalCount, a.error || '', a.skipped || '', (a.fallbackReasons || []).join(','));
+              for (const m of x.matches) console.log('  #' + m.number, m.similarity.score, m.title.slice(0, 70));
+            }
+            for (const d of r.diagnostics) console.log('diag', d.level, d.stage, d.message.slice(0, 160));
+          "
