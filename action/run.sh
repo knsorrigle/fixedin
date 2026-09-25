@@ -15,10 +15,24 @@ mkdir -p "$out"
 # Install into a private prefix rather than `npx fixedin@x`: inside a project
 # whose own package is named "fixedin" (this repo), npx runs that project's
 # bin instead of the published package.
+#
+# Retries: for a minute or two after a release, npm can list the new version
+# yet refuse to install it ("No matching version"), so a workflow using a
+# just-released tag would fail. --prefer-online stops npm reusing its cached
+# "no such version" answer between attempts.
 install_fixedin() {
-  npm install --prefix "$out/pkg" --no-save --no-audit --no-fund --loglevel=error "fixedin@$1" >&2 \
-    || fail "couldn't install fixedin@$1 from npm"
-  cmd=(node "$out/pkg/node_modules/fixedin/dist/cli.js")
+  local attempts=5 delay="${FIXEDIN_INSTALL_RETRY_DELAY:-10}" i
+  for ((i = 1; i <= attempts; i++)); do
+    if npm install --prefix "$out/pkg" --no-save --no-audit --no-fund --prefer-online --loglevel=error "fixedin@$1" >&2; then
+      cmd=(node "$out/pkg/node_modules/fixedin/dist/cli.js")
+      return 0
+    fi
+    if ((i < attempts)); then
+      echo "::notice title=fixedin::Couldn't install fixedin@$1 (attempt $i of $attempts); retrying in $((delay * i))s — a just-released version can take a minute or two to become installable."
+      sleep $((delay * i))
+    fi
+  done
+  fail "couldn't install fixedin@$1 from npm after $attempts attempts (does that version exist? https://www.npmjs.com/package/fixedin?activeTab=versions)"
 }
 if [ -n "$INPUT_VERSION" ]; then
   install_fixedin "$INPUT_VERSION"

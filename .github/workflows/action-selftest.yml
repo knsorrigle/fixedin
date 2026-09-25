@@ -133,6 +133,47 @@ jobs:
           FIX: ${{ steps.old.outputs.fix-available }}
         run: test "$OUTCOME" = failure && test "$FIX" != true && echo "old version refused ok"
 
+  install-retry:
+    name: Install retries while npm catches up
+    # A stand-in npm fails twice with npm's real "No matching version" error,
+    # as it does for a minute or two after a release; the action must retry.
+    runs-on: ubuntu-latest
+    env:
+      FIXEDIN_REPLAY: ${{ github.workspace }}/tests/fixtures/http
+      FIXEDIN_INSTALL_RETRY_DELAY: '0'
+    steps:
+      - uses: actions/checkout@v7
+      - name: A flaky npm on the PATH
+        run: |
+          mkdir -p "$RUNNER_TEMP/flaky"
+          real=$(command -v npm)
+          cat > "$RUNNER_TEMP/flaky/npm" <<EOF
+          #!/usr/bin/env bash
+          n=\$(cat "$RUNNER_TEMP/npm-count" 2>/dev/null || echo 0); echo \$((n + 1)) > "$RUNNER_TEMP/npm-count"
+          if [ "\$n" -lt 2 ]; then echo "npm error notarget No matching version found for fixedin" >&2; exit 1; fi
+          exec "$real" "\$@"
+          EOF
+          chmod +x "$RUNNER_TEMP/flaky/npm"
+          echo "$RUNNER_TEMP/flaky" >> "$GITHUB_PATH"
+          cp tests/fixtures/stacks/axios-default-create.txt test.log
+      - name: Run the action (fixedin from npm)
+        id: fixedin
+        uses: ./
+        with:
+          log: test.log
+          working-directory: tests/fixtures/projects/axios-1.1.3
+          repo: axios/axios
+          comment: 'false'
+          version: latest
+      - name: Check it retried and then worked
+        env:
+          FIX: ${{ steps.fixedin.outputs.fix-available }}
+        run: |
+          set -euo pipefail
+          test "$(cat "$RUNNER_TEMP/npm-count")" = 3
+          test "$FIX" = true
+          echo "retried twice, then worked"
+
   live:
     name: Live GitHub API (workflow token)
     runs-on: ubuntu-latest
