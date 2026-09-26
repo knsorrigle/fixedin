@@ -61,7 +61,7 @@ npm test 2>&1 | fixedin --json | jq '.errors[].results[].verdict.kind'
 
 | Flag | Default | |
 |---|---|---|
-| `--cwd <dir>` | current dir | Project whose lockfile to read (searches upward, so monorepo packages work; in pnpm, yarn, Bun and Deno workspaces it also picks which package's dependencies count) |
+| `--cwd <dir>` | current dir | Project whose lockfile to read (searches upward, so monorepo packages work; in npm, pnpm, yarn, Bun and Deno workspaces it also picks which package's dependencies count; in a monorepo log, each error's own package is used instead) |
 | `--repo <owner/name>` | detected | Search this repo instead of the ones found in the stack trace |
 | `--limit <n>` | `5` | Matches to show per repo |
 | `--max-errors <n>` | `5` | Distinct errors to check in a log that has several ([how logs are split](#logs-with-several-errors)) |
@@ -93,7 +93,7 @@ jobs:
 
       - name: Already fixed upstream?
         if: failure()
-        uses: knsorrigle/fixedin@v0.9.0
+        uses: knsorrigle/fixedin@v1.0.0
         with:
           log: test.log
 ```
@@ -110,7 +110,7 @@ jobs:
 
 **Why `issues: read`:** a token that can read pull requests but not issues gets *only pull requests* back from GitHub's issue search — even for `is:issue` — so every search would come back empty. fixedin detects this and reports it as a failed search (exit code 2) with the fix, rather than "no matching issue".
 
-Outputs: `fix-available` (`"true"`/`"false"`), `exit-code` (as for `--exit-code`), `report` (path to the `--json` report) and `markdown` (path to the markdown report). The action runs the fixedin release matching its tag, so `@v0.9.0` keeps behaving the same when newer versions ship. Issue titles and release notes in the comment are escaped so they can't @-mention anyone, link to issues in your repo, or inject HTML.
+Outputs: `fix-available` (`"true"`/`"false"`), `exit-code` (as for `--exit-code`), `report` (path to the `--json` report) and `markdown` (path to the markdown report). The action runs the fixedin release matching its tag, so `@v1.0.0` keeps behaving the same when newer versions ship. Issue titles and release notes in the comment are escaped so they can't @-mention anyone, link to issues in your repo, or inject HTML.
 
 ## Use in CI
 
@@ -171,6 +171,8 @@ Not checked:
 
 GitHub Actions' raw-log timestamps (`2024-05-01T12:00:00.1234567Z …`) are removed first, so a downloaded job log works too.
 
+Each error's installed versions come from the workspace package that printed it (Turborepo's `@shop/web:…` is the package named `@shop/web`, pnpm's `apps/web test` is the one in `apps/web`, and a Compose service or concurrently name matches a package or folder of that name, if exactly one does). So the same error in two packages is checked once for each, against each package's own versions. Workspaces are read from `package.json` `workspaces`, `pnpm-workspace.yaml` and `deno.json` `workspace`.
+
 Each error costs a few searches, and hybrid search allows 10 per minute, so a log with many errors may pause for the rate limit (fixedin says so on stderr).
 
 ## Verdicts
@@ -192,7 +194,7 @@ Matches with similarity between 0.60 and 0.75 are labelled **weak match**: treat
 error text ─► parse ─► lockfile ─► resolve ─► search ─► trace ─► release ─► verdict
 ```
 
-1. **parse** — picks the error line, strips paths / line:col / hex addresses / UUIDs / IPs, extracts error codes (`ERR_*`, errno codes, Prisma `P####`), and collects packages from `node_modules/<pkg>/` stack frames (including pnpm and Vite's `.vite/deps` paths), Deno's npm cache paths (`…/deno/npm/registry.npmjs.org/<pkg>/<version>/`) and "Cannot find module" messages. Test-runner frames (jest, vitest, …) are ranked last.
+1. **parse** — picks the error line, strips paths / line:col / hex addresses / UUIDs / IPs, extracts error codes (`ERR_*`, errno codes, Prisma `P####`), and collects packages from `node_modules/<pkg>/` stack frames (including pnpm and Vite's `.vite/deps` paths), Deno's npm cache paths (`…/deno/npm/registry.npmjs.org/<pkg>/<version>/`), JSR modules (`https://jsr.io/@hono/hono/4.5.1/…`, reported as `jsr:@hono/hono`) and "Cannot find module" messages. Test-runner frames (jest, vitest, …) are ranked last.
 2. **lockfile** — reads the installed version from the nearest lockfile, falling back to `node_modules/<pkg>/package.json`:
 
    | Lockfile | Versions |
@@ -200,18 +202,18 @@ error text ─► parse ─► lockfile ─► resolve ─► search ─► trac
    | `package-lock.json` / `npm-shrinkwrap.json` | lockfileVersion 1–3 (npm 5+) |
    | `pnpm-lock.yaml` | 5.x, 6.0, 9.0 (pnpm 7+) |
    | `yarn.lock` | classic (yarn 1) and Berry (yarn 2+), including yarn catalogs |
-   | `bun.lock` | 0–2 (Bun 1.1.39+); the binary `bun.lockb` is detected and fixedin says how to convert it |
-   | `deno.lock` | 3–5 (Deno 1.40+), npm packages only |
+   | `bun.lock` / `bun.lockb` | text `bun.lock` 0–2 (Bun 1.1.39+); the older binary `bun.lockb` is read by having Bun print it (`bun bun.lockb`), so it needs Bun installed — without it fixedin says how to convert and falls back to `node_modules` |
+   | `deno.lock` | 3–5 (Deno 1.40+), npm and JSR packages |
 
    **The copy that threw wins.** When a stack frame shows which copy ran, fixedin uses that copy, not the top-level one, and says so ("0.25.0 at node_modules/wait-on/node_modules/axios — the copy in the stack trace; top-level axios is 1.1.3"). Nested npm paths are matched against the lockfile; pnpm, Bun, yarn PnP and Deno paths embed the version, so those work even without a lockfile.
 
    `npm:` aliases resolve to the real package. In a workspace, the package containing `--cwd` decides which version counts, so `packages/web` and `packages/api` can get different verdicts for the same error. No YAML or JSONC library is involved: small readers handle exactly what each tool writes, and fail with a line number or reason on anything else.
-3. **resolve** — maps each package to its GitHub repo via the `repository` field on npm (handles `git+https`, `github:` shorthand, ssh URLs and monorepo `directory`), then asks GitHub for the repo's current name (search doesn't follow renames, e.g. `prisma/prisma` → `prisma/orm`).
+3. **resolve** — maps each package to its GitHub repo via the `repository` field on npm (handles `git+https`, `github:` shorthand, ssh URLs and monorepo `directory`), or, for a JSR package, the GitHub repository linked on jsr.io; then asks GitHub for the repo's current name (search doesn't follow renames, e.g. `prisma/prisma` → `prisma/orm`).
 4. **search** — `GET /search/issues` with `search_type=hybrid`, scoped to `repo:<owner/name> is:issue`. GitHub reports which mode actually ran; fixedin records it and falls back to lexical search when hybrid is unavailable. Because GitHub scores every hit `1.0`, results are re-ranked locally by weighted word overlap with the title and body, with a bonus when the message appears verbatim. Most JS errors are a template around one identifier, so that identifier must appear *in the same role*: for "adapter is not a function", an issue about "setKeepAlive is not a function" is capped below the match threshold even if it mentions "adapter" elsewhere. The same goes for `reading 'X'` and "Cannot find module 'X'".
 
    Messages with no identifier ("fetch failed", "Cannot use import statement outside a module") are matched by *where* they failed instead: fixedin keeps the package's frames from your trace (`invokeRequest` in `next/dist/server/lib/server-ipc/invoke-request.js`), runs one extra search for them, and treats an issue that pasted the same throw site as a match — and one that pasted a *different* path through the same package as a different bug. Frames every error passes through (a library's error factory like `AxiosError.from`, or Prisma's `handleRequestError`) are ignored, and bundler chunk hashes are stripped so traces from different builds still compare.
-5. **trace** — reads the issue's GraphQL timeline for the fix: the PR or commit that closed it, a linked PR, or (flagged as inferred) a same-repo PR merged just before a manual close. References from other repos — usually downstream "bump dependency" PRs — are ignored. Duplicates are followed one hop.
-6. **release** — finds the earliest npm release whose source contains the fix's merge commit. A fix merged into a maintenance branch (`v3.1`, `1.x`) is looked for on that release line — later mainline releases usually don't contain the backport commit. Each version maps to a commit through npm's `gitHead`, or a git tag (`v1.2.3`, `1.2.3`, `pkg@1.2.3`, …) when `gitHead` is missing. Containment is `GET /repos/{o}/{r}/compare/{fix}...{release}` (`ahead`/`identical` = contains). Versions are binary-searched, limited to releases published after the merge and on or above your major version, so it's a handful of API calls, not hundreds.
+5. **trace** — reads the issue's timeline (GraphQL with a token, the public REST timeline without one — see [GitHub token](#github-token)) for the fix: the PR or commit that closed it, a linked PR, or (flagged as inferred) a same-repo PR merged just before a manual close. References from other repos — usually downstream "bump dependency" PRs — are ignored. Duplicates are followed one hop.
+6. **release** — finds the earliest npm (or JSR) release whose source contains the fix's merge commit. A fix merged into a maintenance branch (`v3.1`, `1.x`) is looked for on that release line — later mainline releases usually don't contain the backport commit. Each version maps to a commit through npm's `gitHead` (for JSR, the commit named in the version's Sigstore provenance statement), or a git tag (`v1.2.3`, `1.2.3`, `pkg@1.2.3`, …) when `gitHead` is missing. Containment is `GET /repos/{o}/{r}/compare/{fix}...{release}` (`ahead`/`identical` = contains). Versions are binary-searched, limited to releases published after the merge and on or above your major version, so it's a handful of API calls, not hundreds.
 7. **verdict** — compares with your installed version. The installed release is also checked directly against the fix commit, which beats semver when fixes are backported. It quotes the release-note line for the fix — from the GitHub release, or the project's changelog (the package's own directory in a monorepo, then the root), matched by the fix's PR, issue or commit within that version's section — and warns when the upgrade crosses a major version.
 8. **remedy** — "upgrade to >=X" only works for packages you depend on directly. When the copy that threw was pulled in by another package, fixedin finds that parent in the lockfile, reads the range it declares, and tells you what actually gets the fix in:
 
@@ -273,7 +275,8 @@ Every optional field is present as `null` rather than omitted. Additive changes 
 
 ## Limitations
 
-- npm packages only in v1. Deno's `jsr:` and URL imports aren't checked, and Bun's binary `bun.lockb` isn't read (fixedin says so and falls back to `node_modules`).
+- npm and JSR packages only. Deno's plain URL imports (`https://deno.land/x/…`) aren't checked, and reading Bun's binary `bun.lockb` needs Bun installed.
+- A JSR version is mapped to its commit through its provenance statement, which JSR records only for packages published from GitHub Actions; for others fixedin falls back to git tags (`v1.2.3`, …).
 - Errors thrown from your own code have no `node_modules/` frames, so fixedin can't guess the package — use `--repo`.
 - The similarity score is word overlap plus the identifier and stack-frame rules above, not semantic understanding. A message with neither an identifier nor an informative frame (a network error like "connect ECONNREFUSED", or Prisma's "Unique constraint failed") can still match loosely; watch for the *weak match* label.
 - The release search assumes containment is monotonic in semver order after the merge date. Cherry-picked backports can break that; the direct check of your installed version guards the verdict itself.

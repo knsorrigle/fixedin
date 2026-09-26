@@ -52,7 +52,10 @@
     "pnpm",
     "yarn",
     "bun",
-    "deno"
+    "deno",
+    "jsr",
+    "monorepo",
+    "github-action"
   ],
   "dependencies": {
     "@octokit/rest": "^22.0.1",
