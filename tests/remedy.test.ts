@@ -68,7 +68,7 @@ describe('declaredDependencies', () => {
     const dir = mkdtempSync(join(tmpdir(), 'fixedin-decl-'));
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ dependencies: { a: '1', 'sw-cjs': 'npm:string-width@4' }, devDependencies: { b: '1' } }));
     writeFileSync(join(dir, 'deno.jsonc'), '{ // comment\n "imports": { "x": "npm:@scope/pkg@1/sub", "std": "jsr:@std/path@1" }, }');
-    expect([...declaredDependencies(dir).names].sort()).toEqual(['@scope/pkg', 'a', 'b', 'string-width', 'sw-cjs']);
+    expect([...declaredDependencies(dir).names].sort()).toEqual(['@scope/pkg', 'a', 'b', 'jsr:@std/path', 'string-width', 'sw-cjs']);
   });
 
   it("a workspace member's own package.json wins over the root's", () => {

@@ -1,0 +1,31 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.jsr.io/scopes/hono/packages/hono/versions/4.10.0"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "*",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cache-control": "public, max-age=30, s-maxage=2592000, stale-while-revalidate=86400",
+      "cf-cache-status": "DYNAMIC",
+      "cf-ray": "a414ff411d4f3c13-BLR",
+      "connection": "keep-alive",
+      "content-type": "application/json",
+      "cross-origin-resource-policy": "cross-origin",
+      "date": "Sat, 26 Sep 2026 20:25:18 GMT",
+      "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+      "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=cyTNk5OhOKQ0pWhn5k9jBjLUQZRzhA%2BySZ6372644SBPmUYhmyEHO4T9scfMvmJQA35ApvaD9DBFzoKq1AmpNV9paNEycIwLg5L0A6AhdzJQVnDtF6P2xZRuooKy6Ga26%2FKVIOS4qn3v\"}]}",
+      "server": "cloudflare",
+      "vary": "Cookie, Authorization, Origin",
+      "x-cloud-trace-context": "339c3a70a3c1b97848bc95d02ffc993f",
+      "x-content-type-options": "nosniff",
+      "x-deno-ray": "339c3a70a3c1b97848bc95d02ffc993f",
+      "x-jsr-backend": "api",
+      "x-robots-tag": "noindex"
+    },
+    "body": "{\"scope\":\"hono\",\"package\":\"hono\",\"version\":\"4.10.0\",\"yanked\":false,\"usesNpm\":false,\"newerVersionsCount\":63,\"rekorLogId\":\"615328250\",\"license\":null,\"readmePath\":\"/README.md\",\"updatedAt\":\"2025-10-16T21:46:56.551516Z\",\"createdAt\":\"2025-10-16T21:46:51.416583Z\",\"symbolCount\":null}"
+  }
+}

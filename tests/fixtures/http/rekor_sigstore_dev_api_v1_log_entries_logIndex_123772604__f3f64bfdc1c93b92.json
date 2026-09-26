@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://rekor.sigstore.dev/api/v1/log/entries?logIndex=123772604"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+      "cache-control": "no-cache, no-store, no-transform, must-revalidate, private, max-age=0",
+      "content-type": "application/json",
+      "date": "Sat, 26 Sep 2026 20:25:25 GMT",
+      "expires": "Thu, 01 Jan 1970 00:00:00 GMT",
+      "pragma": "no-cache",
+      "vary": "Origin",
+      "via": "1.1 google",
+      "x-accel-expires": "0"
+    },
+    "body": "{\"108e9186e8c5677a5c543b76f67ade84ec4df467337ee60bbdb0abc6a2be65dd1cef47e0f50c9507\":{\"attestation\":{\"data\":\"eyJ0eXBlIjoiaHR0cHM6Ly9pbi10b3RvLmlvL1N0YXRlbWVudC92MSIsInN1YmplY3QiOnsibmFtZSI6InBrZzpqc3IvQGhvbm8vaG9ub0A0LjUuOCIsImRpZ2VzdCI6eyJzaGEyNTYiOiI2MGY1YjRjNjFlZGFlMjAxNjAyMmQ2MDg3YjRmYzM4MWYzNzhkMzM3ZjA0NmY1NmUwMGEzYTM1MTJjN2U5YzE2In19LCJwcmVkaWNhdGVUeXBlIjoiaHR0cHM6Ly9zbHNhLmRldi9wcm92ZW5hbmNlL3YxIiwicHJlZGljYXRlIjp7ImJ1aWxkRGVmaW5pdGlvbiI6eyJidWlsZFR5cGUiOiJodHRwczovL3Nsc2EtZnJhbWV3b3JrLmdpdGh1Yi5pby9naXRodWItYWN0aW9ucy1idWlsZHR5cGVzL3dvcmtmbG93L3YxIiwicmVzb2x2ZWREZXBlbmRlbmNpZXMiOlt7InVyaSI6ImdpdCtodHRwczovL2dpdGh1Yi5jb20vaG9ub2pzL2hvbm9AcmVmcy90YWdzL3Y0LjUuOCIsImRpZ2VzdCI6eyJnaXRDb21taXQiOiJkMWM3ZjZmNWYxNmMzZmQzZmFlNWMzZmFiNjIyMDBiYzkzNWRmMmMzIn19XSwiaW50ZXJuYWxQYXJhbWV0ZXJzIjp7ImdpdGh1YiI6eyJldmVudE5hbWUiOiJwdXNoIiwicmVwb3NpdG9yeUlkIjoiNDM4Mzg0OTg0IiwicmVwb3NpdG9yeU93bmVySWQiOiI5ODQ5NTUyNyJ9fSwiZXh0ZXJuYWxQYXJhbWV0ZXJzIjp7IndvcmtmbG93Ijp7InJlZiI6InJlZnMvdGFncy92NC41LjgiLCJyZXBvc2l0b3J5IjoiaHR0cHM6Ly9naXRodWIuY29tL2hvbm9qcy9ob25vIiwicGF0aCI6Ii5naXRodWIvd29ya2Zsb3dzL3JlbGVhc2UueW1sIn19fSwicnVuRGV0YWlscyI6eyJidWlsZGVyIjp7ImlkIjoiaHR0cHM6Ly9naXRodWIuY29tL2FjdGlvbnMvcnVubmVyL2dpdGh1Yi1ob3N0ZWQifSwibWV0YWRhdGEiOnsiaW52b2NhdGlvbklkIjoiaHR0cHM6Ly9naXRodWIuY29tL2hvbm9qcy9ob25vL2FjdGlvbnMvcnVucy8xMDUwMzQ1NTU0My9hdHRlbXB0cy8xIn19fX0=\"},\"logIndex\":123772604}}"
+  }
+}

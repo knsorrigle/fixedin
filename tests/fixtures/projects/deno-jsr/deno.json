@@ -1,0 +1,4 @@
+{
+  "imports": { "hono": "jsr:@hono/hono@4.5.1", "hono/": "jsr:/@hono/hono@4.5.1/" },
+  "compilerOptions": { "jsx": "precompile", "jsxImportSource": "hono/jsx" }
+}

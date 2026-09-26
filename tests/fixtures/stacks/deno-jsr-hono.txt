@@ -1,0 +1,9 @@
+TypeError: Cannot read properties of null (reading 'isEscaped')
+    at JSXFunctionNode.toStringToBuffer (https://jsr.io/@hono/hono/4.5.1/src/jsx/base.ts:251:64)
+    at JSXFunctionNode.toString (https://jsr.io/@hono/hono/4.5.1/src/jsx/base.ts:143:12)
+    at Context.html (https://jsr.io/@hono/hono/4.5.1/src/context.ts:750:33)
+    at Array.<anonymous> (file:///Users/dev/app/main.tsx:8:23)
+    at Hono.dispatch (https://jsr.io/@hono/hono/4.5.1/src/hono-base.ts:423:38)
+    at Hono.fetch (https://jsr.io/@hono/hono/4.5.1/src/hono-base.ts:474:17)
+    at Hono.request (https://jsr.io/@hono/hono/4.5.1/src/hono-base.ts:504:17)
+    at file:///Users/dev/app/main.tsx:10:23

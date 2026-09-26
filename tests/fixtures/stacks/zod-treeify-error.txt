@@ -1,0 +1,6 @@
+node_modules/zod/v4/core/errors.js:113
+                        curr.errors.push(mapper(issue));
+                                    ^
+TypeError: Cannot read properties of undefined (reading 'push')
+    at processError (node_modules/zod/v4/core/errors.js:113:37)
+    at treeifyError (node_modules/zod/v4/core/errors.js:120:5)

@@ -5,7 +5,7 @@
  *   - candidate npm packages, ranked by how likely they are the culprit
  */
 
-export type CandidateSource = 'stack-frame' | 'vite-deps' | 'deno-npm-cache' | 'module-not-found';
+export type CandidateSource = 'stack-frame' | 'vite-deps' | 'deno-npm-cache' | 'jsr-url' | 'module-not-found';
 
 export interface PackageCandidate {
   name: string;
@@ -44,7 +44,7 @@ export interface PackageFrame {
 export interface FrameCopy {
   installPath?: string;
   version?: string;
-  versionFrom?: 'pnpm' | 'bun' | 'yarn-cache' | 'deno-cache';
+  versionFrom?: 'pnpm' | 'bun' | 'yarn-cache' | 'deno-cache' | 'jsr-url';
 }
 
 export interface ParsedError {
@@ -101,6 +101,12 @@ const VITE_DEP = /node_modules[\\/]\.vite[\\/]deps[\\/]([^\\/\s:?()'"]+?)\.[mc]?
 const DENO_NPM_CACHE =
   /[\\/]npm[\\/][a-z0-9.-]+\.[a-z]{2,}(?::\d+)?[\\/]((?:@[^\\/\s:()'"]+[\\/])?[^\\/\s:()'"]+)[\\/](\d+\.\d+\.\d+[^\\/\s]*)[\\/]/;
 const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+/**
+ * Deno runs JSR packages from their URL, version included:
+ *   at escapeToBuffer (https://jsr.io/@hono/hono/4.6.5/src/utils/html.ts:91:21)
+ * Named "jsr:@hono/hono" (see src/jsr.ts).
+ */
+const JSR_URL = /https:\/\/jsr\.io\/(@[a-z0-9-]+\/[a-z0-9-]+)\/(\d+\.\d+\.\d+[^/\s]*)\/([^\s:()'"?]+)/;
 const MODULE_NOT_FOUND = [
   /Cannot find module ['"]([^'"]+)['"]/,
   /Can't resolve ['"]([^'"]+)['"]/,
@@ -228,6 +234,10 @@ export function installPathIn(line: string, name: string): string | undefined {
 /** What a frame says about which copy of `name` it ran. */
 export function frameCopy(line: string, name: string, source: CandidateSource): FrameCopy | undefined {
   const l = line.replace(/\\/g, '/');
+  if (source === 'jsr-url') {
+    const v = line.match(JSR_URL)?.[2];
+    return v && SEMVER.test(v) ? { version: v, versionFrom: 'jsr-url' } : undefined;
+  }
   if (source === 'deno-npm-cache') {
     const m = l.match(DENO_NPM_CACHE);
     const v = m?.[2];
@@ -260,7 +270,9 @@ export function packageFrame(line: string, name: string): PackageFrame | undefin
   const l = line.replace(/\\/g, '/');
   if (!FRAME.test(l)) return undefined;
   const pkg = escapeRe(name);
+  const jsr = name.startsWith('jsr:') ? l.match(JSR_URL) : undefined;
   const m =
+    (jsr && `jsr:${jsr[1]}` === name ? [jsr[0], jsr[3]] : undefined) ??
     l.match(new RegExp(`node_modules/${pkg}/([^\\s:()'"?]+)`)) ??
     l.match(new RegExp(`/npm/[^/]+/${pkg}/\\d+\\.\\d+\\.\\d+[^/]*/([^\\s:()'"?]+)`));
   if (!m) return undefined;
@@ -282,7 +294,7 @@ export function extractPackages(lines: string[]): PackageCandidate[] {
     const name = normalizePackageName(raw);
     if (!name) return;
     const existing = byName.get(name);
-    const frame = source === 'stack-frame' || source === 'deno-npm-cache' ? packageFrame(lines[line]!, name) : undefined;
+    const frame = source === 'stack-frame' || source === 'deno-npm-cache' || source === 'jsr-url' ? packageFrame(lines[line]!, name) : undefined;
     if (existing) {
       existing.hits++;
       // The first frame is the throw site; later ones only fill a gap.
@@ -309,8 +321,10 @@ export function extractPackages(lines: string[]): PackageCandidate[] {
       if (name) add(name, i, 'vite-deps');
       return;
     }
+    const jsr = line.match(JSR_URL);
     const nm = line.match(NODE_MODULES_PKG);
-    if (nm) add(nm[1]!, i, 'stack-frame');
+    if (jsr) add(`jsr:${jsr[1]}`, i, 'jsr-url');
+    else if (nm) add(nm[1]!, i, 'stack-frame');
     else {
       const deno = line.match(DENO_NPM_CACHE);
       if (deno) add(deno[1]!, i, 'deno-npm-cache');
@@ -327,6 +341,7 @@ export function extractPackages(lines: string[]): PackageCandidate[] {
 }
 
 function normalizePackageName(raw: string): string | undefined {
+  if (raw.startsWith('jsr:')) return raw;
   const name = raw.replace(/\\/g, '/').replace(/\/+/g, '/');
   // .pnpm, .bin, .cache, .vite, .prisma — tooling directories, not packages.
   if (name.startsWith('.')) return undefined;

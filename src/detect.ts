@@ -51,6 +51,8 @@ function findCopies(
 ): { copies: InstalledPackage[]; tried: string[] } {
   const copies = reader?.find(name) ?? [];
   if (copies.length) return { copies, tried: [] };
+  // JSR packages live in Deno's cache, never in node_modules.
+  if (name.startsWith('jsr:')) return { copies: [], tried: reader ? [`${reader.file} (no entry)`] : [] };
   const nm = findInNodeModules(cwd, name, reader ? dirname(reader.file) : undefined);
   if (nm.found) {
     if (reader) diagnostics.info('lockfile', `${name} is not in ${reader.file}; using ${nm.found.source}.`);

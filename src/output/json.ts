@@ -182,7 +182,7 @@ const Packages = z.array(
   z.object({
     name: z.string(),
     hits: z.number().int(),
-    source: z.enum(['stack-frame', 'vite-deps', 'deno-npm-cache', 'module-not-found']),
+    source: z.enum(['stack-frame', 'vite-deps', 'deno-npm-cache', 'jsr-url', 'module-not-found']),
     lowSignal: z.boolean(),
     installed: Installed.nullable(),
     repo: Repo.nullable(),

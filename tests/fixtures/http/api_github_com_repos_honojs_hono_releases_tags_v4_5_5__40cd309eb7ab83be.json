@@ -1,0 +1,39 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.github.com/repos/honojs/hono/releases/tags/v4.5.5"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "cache-control": "private, max-age=60, s-maxage=60",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 26 Sep 2026 20:25:30 GMT",
+      "etag": "W/\"7b7a6a1a289fea5571b1099c0cc264d69eb7e7700e02c0cbcc4c69dc654a3421\"",
+      "last-modified": "Sun, 11 Aug 2024 04:05:49 GMT",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
+      "x-accepted-oauth-scopes": "repo",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-api-version-selected": "2022-11-28",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "2A43:AC029:1533522:17C2BB5:6AB82A3A",
+      "x-oauth-client-id": "178c6fc778ccc68e1d6a",
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4968",
+      "x-ratelimit-reset": "1790456847",
+      "x-ratelimit-resource": "core",
+      "x-ratelimit-used": "32",
+      "x-xss-protection": "0"
+    },
+    "body": "{\"url\":\"https://api.github.com/repos/honojs/hono/releases/169656308\",\"assets_url\":\"https://api.github.com/repos/honojs/hono/releases/169656308/assets\",\"upload_url\":\"https://uploads.github.com/repos/honojs/hono/releases/169656308/assets{?name,label}\",\"html_url\":\"https://github.com/honojs/hono/releases/tag/v4.5.5\",\"id\":169656308,\"author\":{\"login\":\"yusukebe\",\"id\":10682,\"node_id\":\"MDQ6VXNlcjEwNjgy\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/10682?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/yusukebe\",\"html_url\":\"https://github.com/yusukebe\",\"followers_url\":\"https://api.github.com/users/yusukebe/followers\",\"following_url\":\"https://api.github.com/users/yusukebe/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/yusukebe/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/yusukebe/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/yusukebe/subscriptions\",\"organizations_url\":\"https://api.github.com/users/yusukebe/orgs\",\"repos_url\":\"https://api.github.com/users/yusukebe/repos\",\"events_url\":\"https://api.github.com/users/yusukebe/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/yusukebe/received_events\",\"type\":\"User\",\"user_view_type\":\"public\",\"site_admin\":false},\"node_id\":\"RE_kwDOGiE5WM4KHL_0\",\"tag_name\":\"v4.5.5\",\"target_commitish\":\"main\",\"name\":\"v4.5.5\",\"draft\":false,\"immutable\":false,\"prerelease\":false,\"created_at\":\"2024-08-11T04:05:23Z\",\"updated_at\":\"2024-08-11T04:05:49Z\",\"published_at\":\"2024-08-11T04:05:49Z\",\"assets\":[],\"tarball_url\":\"https://api.github.com/repos/honojs/hono/tarball/v4.5.5\",\"zipball_url\":\"https://api.github.com/repos/honojs/hono/zipball/v4.5.5\",\"body\":\"## What's Changed\\r\\n* fix(jsx): allow null, undefined, and boolean to be returned from function component by @usualoma in https://github.com/honojs/hono/pull/3241\\r\\n* feat(context): Add types for `c.header` by @nakasyou in https://github.com/honojs/hono/pull/3221\\r\\n* fix(jsx): fix draggable type to accept boolean by @yasuaki640 in https://github.com/honojs/hono/pull/3253\\r\\n* feat(context): add Context-Type types to `c.header` by @nakasyou in https://github.com/honojs/hono/pull/3255\\r\\n* fix(serve-static): supports directory contains `.` and not end `/` by @yusukebe in https://github.com/honojs/hono/pull/3256\\r\\n\\r\\n\\r\\n**Full Changelog**: https://github.com/honojs/hono/compare/v4.5.4...v4.5.5\",\"reactions\":{\"url\":\"https://api.github.com/repos/honojs/hono/releases/169656308/reactions\",\"total_count\":18,\"+1\":10,\"-1\":0,\"laugh\":0,\"hooray\":0,\"confused\":0,\"heart\":8,\"rocket\":0,\"eyes\":0},\"mentions_count\":4}"
+  }
+}

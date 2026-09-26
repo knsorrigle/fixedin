@@ -1,0 +1,40 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.github.com/repos/honojs/hono/compare/fbed2df668d968d9e4d8833ad344ba99e82ecddd...eb86162a9a4472ef86329efe27007caf0afb9284?per_page=1"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "cache-control": "private, max-age=60, s-maxage=60",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 26 Sep 2026 20:25:21 GMT",
+      "etag": "W/\"52a828f0f2fbcbc72a980b15c5525cd0aa64510ff374162d9ed457b766b46628\"",
+      "last-modified": "Wed, 05 Mar 2025 01:34:49 GMT",
+      "link": "<https://api.github.com/repositories/438384984/compare/fbed2df668d968d9e4d8833ad344ba99e82ecddd...eb86162a9a4472ef86329efe27007caf0afb9284?per_page=1&page=254>; rel=\"last\", <https://api.github.com/repositories/438384984/compare/fbed2df668d968d9e4d8833ad344ba99e82ecddd...eb86162a9a4472ef86329efe27007caf0afb9284?per_page=1&page=2>; rel=\"next\", <https://api.github.com/repositories/438384984/compare/fbed2df668d968d9e4d8833ad344ba99e82ecddd...eb86162a9a4472ef86329efe27007caf0afb9284?per_page=1&page=1>; rel=\"first\"",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept, Authorization, Cookie, X-GitHub-OTP,Accept-Encoding, Accept, X-Requested-With",
+      "x-accepted-oauth-scopes": "",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-api-version-selected": "2022-11-28",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "2A43:AC029:1532EA1:17C23FD:6AB82A30",
+      "x-oauth-client-id": "178c6fc778ccc68e1d6a",
+      "x-oauth-scopes": "gist, read:org, repo, workflow",
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4975",
+      "x-ratelimit-reset": "1790456847",
+      "x-ratelimit-resource": "core",
+      "x-ratelimit-used": "25",
+      "x-xss-protection": "0"
+    },
+    "body": "{\"status\":\"ahead\",\"ahead_by\":254,\"behind_by\":0,\"total_commits\":254}"
+  }
+}

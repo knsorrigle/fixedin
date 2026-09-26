@@ -2,6 +2,7 @@
  * resolve/: npm package name → GitHub owner/repo (+ monorepo directory),
  * using the `repository` field from the npm registry.
  */
+import { isJsr, resolveJsrRepo } from '../jsr.js';
 import type { NetClient } from '../net/client.js';
 
 export interface RepoRef {
@@ -13,7 +14,7 @@ export interface RepoRef {
 
 export interface ResolvedRepo extends RepoRef {
   /** Which packument field it came from. */
-  via: 'repository' | 'bugs' | 'homepage';
+  via: 'repository' | 'bugs' | 'homepage' | 'jsr';
   raw: string;
 }
 
@@ -116,6 +117,7 @@ function rawString(f: RepositoryField): string {
 }
 
 export async function resolveRepo(client: NetClient, pkg: string): Promise<ResolvedRepo> {
+  if (isJsr(pkg)) return resolveJsrRepo(client, pkg);
   const url = registryUrl(pkg, '/latest');
   let manifest: PackumentVersion;
   try {

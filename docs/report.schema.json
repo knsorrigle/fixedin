@@ -249,6 +249,7 @@
               "stack-frame",
               "vite-deps",
               "deno-npm-cache",
+              "jsr-url",
               "module-not-found"
             ]
           },

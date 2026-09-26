@@ -67,6 +67,9 @@ export function declaredDependencies(cwd: string, stopAt?: string): { names: Set
       for (const spec of Object.values(json?.imports ?? {})) {
         const m = typeof spec === 'string' ? spec.match(/^npm:\/?(@?[^@/]+(?:\/[^@/]+)?)/) : null;
         if (m) names.add(m[1]!);
+        // "jsr:@hono/hono@4" or "jsr:/@hono/hono@4/" (a prefix mapping) declares jsr:@hono/hono.
+        const j = typeof spec === 'string' ? spec.match(/^jsr:\/?(@[^@/]+\/[^@/]+)/) : null;
+        if (j) names.add(`jsr:${j[1]}`);
       }
     }
     if ((foundPkg && foundDeno) || dir === stop || dirname(dir) === dir) break;

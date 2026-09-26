@@ -1,10 +1,11 @@
 /**
- * deno.lock reader — only the npm packages in it (jsr:/https: imports have no
- * npm version to compare). Plain JSON.
+ * deno.lock reader — npm and JSR packages (https: imports have no version to
+ * compare). Plain JSON. JSR packages are named "jsr:@scope/name" (see src/jsr.ts).
  *
- *   version "3" (Deno 1.4x):  packages.specifiers { "npm:axios@1.1.3": "npm:axios@1.1.3" }, packages.npm { … }
+ *   version "3" (Deno 1.4x):  packages.specifiers { "npm:axios@1.1.3": "npm:axios@1.1.3" }, packages.npm { … }, packages.jsr { … }
  *   version "4" (Deno 2.0–2.2), "5" (Deno 2.3+):
- *                             specifiers { "npm:axios@1.1.3": "1.1.3" },               npm { "axios@1.1.3": … }
+ *                             specifiers { "npm:axios@1.1.3": "1.1.3", "jsr:@hono/hono@^4": "4.5.1" },
+ *                             npm { "axios@1.1.3": … }, jsr { "@hono/hono@4.5.1": … }
  *
  * Resolved versions may carry a peer suffix: "18.2.0_react@18.2.0".
  * Direct dependencies are specifiers listed under `workspace` (deno.json
@@ -27,7 +28,8 @@ interface DenoLock {
   version?: string;
   specifiers?: Record<string, string>;
   npm?: Record<string, unknown>;
-  packages?: { specifiers?: Record<string, string>; npm?: Record<string, unknown> };
+  jsr?: Record<string, unknown>;
+  packages?: { specifiers?: Record<string, string>; npm?: Record<string, unknown>; jsr?: Record<string, unknown> };
   workspace?: DepLists & { members?: Record<string, DepLists> };
 }
 
@@ -50,7 +52,7 @@ export function stripDenoPeers(v: string): string {
  *   v4/v5: "5.0.0_react@18.2.0" (name comes from the key)
  */
 export function resolveSpecifierValue(keyName: string, value: string): { name: string; version: string } | undefined {
-  if (value.startsWith('npm:')) {
+  if (value.startsWith('npm:') || value.startsWith('jsr:')) {
     const p = splitNameAt(value.slice(4));
     return p ? { name: p.name, version: stripDenoPeers(p.rest) } : undefined;
   }
@@ -75,14 +77,18 @@ export function parseDenoLock(text: string, path: string, cwd: string = dirname(
 
   const specifiers = (v === 3 ? lock.packages?.specifiers : lock.specifiers) ?? {};
   const npm = (v === 3 ? lock.packages?.npm : lock.npm) ?? {};
+  const jsr = (v === 3 ? lock.packages?.jsr : lock.jsr) ?? {};
 
-  // All locked npm copies.
+  // All locked copies: npm by name, JSR as "jsr:@scope/name".
   const versionsByName = new Map<string, Set<string>>();
-  for (const key of Object.keys(npm)) {
-    const p = splitNameAt(key);
-    if (!p) continue;
-    if (!versionsByName.has(p.name)) versionsByName.set(p.name, new Set());
-    versionsByName.get(p.name)!.add(stripDenoPeers(p.rest));
+  for (const [section, prefix] of [[npm, ''], [jsr, 'jsr:']] as const) {
+    for (const key of Object.keys(section)) {
+      const p = splitNameAt(key);
+      if (!p) continue;
+      const name = `${prefix}${p.name}`;
+      if (!versionsByName.has(name)) versionsByName.set(name, new Set());
+      versionsByName.get(name)!.add(stripDenoPeers(p.rest));
+    }
   }
 
   // Which dependency lists apply to cwd: the root, or a Deno 2 workspace member.
@@ -91,32 +97,39 @@ export function parseDenoLock(text: string, path: string, cwd: string = dirname(
   const lockDir = dirname(path);
   const memberId = selectImporter(['.', ...Object.keys(members)], lockDir, cwd);
   const lists: DepLists = memberId && memberId !== '.' ? members[memberId]! : ws;
-  const direct = [...(lists.dependencies ?? []), ...(lists.packageJson?.dependencies ?? [])].filter((s) => s.startsWith('npm:'));
+  const direct = [...(lists.dependencies ?? []), ...(lists.packageJson?.dependencies ?? [])].filter((s) => s.startsWith('npm:') || s.startsWith('jsr:'));
 
   return {
     kind: 'deno',
     file: path,
     find(name) {
+      const isJsr = name.startsWith('jsr:');
+      const bare = isJsr ? name.slice(4) : name;
+      // JSR packages have no install folder; name the locked copy instead.
+      const where = (version: string, member?: string) =>
+        isJsr ? `jsr:${bare}@${version}` : member ? `${member}/node_modules/${name}` : `node_modules/${name}`;
       let top: InstalledPackage | undefined;
       for (const spec of direct) {
+        if (spec.startsWith('jsr:') !== isJsr) continue;
         const parsed = splitNameAt(spec.slice(4));
         const value = specifiers[spec];
         if (!parsed || value === undefined) continue;
         const r = resolveSpecifierValue(parsed.name, value);
-        if (!r || r.name !== name) continue;
-        const location = memberId && memberId !== '.' ? `${memberId}/node_modules/${name}` : `node_modules/${name}`;
-        top = { name, version: r.version, location, topLevel: true, source: path };
+        if (!r || r.name !== bare) continue;
+        top = { name, version: r.version, location: where(r.version, memberId && memberId !== '.' ? memberId : undefined), topLevel: true, source: path };
         break;
       }
       const others = [...(versionsByName.get(name) ?? [])].filter((x) => x !== top?.version);
       others.sort((a, b) => (semver.valid(a) && semver.valid(b) ? semver.rcompare(a, b) : a.localeCompare(b)));
       return [
         ...(top ? [top] : []),
-        ...others.map((version) => ({ name, version, location: `node_modules/${name}`, topLevel: false, source: path })),
+        ...others.map((version) => ({ name, version, location: where(version), topLevel: false, source: path })),
       ];
     },
     dependents(name, version) {
       const out: Dependent[] = [];
+      // Only npm packages record who depends on them in a form fixedin reads.
+      if (name.startsWith('jsr:')) return out;
       for (const [key, value] of Object.entries(npm)) {
         const self = splitNameAt(key);
         const raw = (value as { dependencies?: string[] | Record<string, string> } | null)?.dependencies;

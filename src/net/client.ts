@@ -89,6 +89,7 @@ async function describeRequest(input: string | URL | Request, init?: RequestInit
  *   packument: readme, per-version metadata → version, gitHead, dependency ranges, time
  *   issue timeline / issue / pull (the tokenless trace, trace/rest.ts): only the
  *     events and fields it reads — a busy timeline shrinks from ~400KB to a few KB
+ *   Rekor log entry (JSR provenance, src/jsr.ts): the attestation, not the proofs
  */
 export function slimFixtureBody(url: string, body: string): string {
   let json: Record<string, unknown>;
@@ -96,6 +97,9 @@ export function slimFixtureBody(url: string, body: string): string {
     json = JSON.parse(body) as Record<string, unknown>;
   } catch {
     return body;
+  }
+  if (/^https:\/\/rekor\.sigstore\.dev\/api\/v1\/log\/entries\?/.test(url)) {
+    return JSON.stringify(Object.fromEntries(Object.entries(json).map(([k, v]) => [k, pick(v as Record<string, unknown>, ['attestation', 'logIndex'])])));
   }
   const issueUrl = url.match(/api\.github\.com\/repos\/([^/]+\/[^/]+)\/(issues|pulls)\/\d+(\/timeline)?(?:\?|$)/);
   if (issueUrl?.[3] && Array.isArray(json)) return JSON.stringify(json.map((e) => slimTimelineEvent(e, issueUrl[1]!)).filter(Boolean));

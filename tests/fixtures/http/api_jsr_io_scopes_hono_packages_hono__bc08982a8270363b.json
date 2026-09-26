@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.jsr.io/scopes/hono/packages/hono"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "*",
+      "age": "80",
+      "alt-svc": "h3=\":443\"; ma=86400",
+      "cache-control": "public, max-age=14400, s-maxage=2592000, stale-while-revalidate=86400",
+      "cf-cache-status": "HIT",
+      "cf-ray": "a414ff34fd133c13-BLR",
+      "connection": "keep-alive",
+      "content-type": "application/json",
+      "cross-origin-resource-policy": "cross-origin",
+      "date": "Sat, 26 Sep 2026 20:25:16 GMT",
+      "last-modified": "Sat, 26 Sep 2026 20:23:56 GMT",
+      "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+      "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=YG1%2FVugCs5KrXr%2BrfJ3cy8EyaVoZIhMeEgBxVDDYP8Sf0JdlrnFZz1L6DvxpjqzMkSlmsB3yyiE6S5bESEzw98OOmxoASXRW0D3jBTGH126GiB3oct%2Ba03jCerxR6RBbkI%2BECUfKY7Gn\"}]}",
+      "server": "cloudflare",
+      "vary": "Cookie, Authorization, Origin",
+      "x-cloud-trace-context": "f580c11033853e8f70a559952bef6832",
+      "x-content-type-options": "nosniff",
+      "x-deno-ray": "f580c11033853e8f70a559952bef6832",
+      "x-jsr-backend": "api",
+      "x-robots-tag": "noindex"
+    },
+    "body": "{\"scope\":\"hono\",\"name\":\"hono\",\"description\":\"Web framework built on Web Standards\",\"githubRepository\":{\"id\":438384984,\"owner\":\"honojs\",\"name\":\"hono\",\"updatedAt\":\"2024-05-11T17:02:21.852465Z\",\"createdAt\":\"2024-05-11T17:02:21.852465Z\"},\"runtimeCompat\":{\"browser\":true,\"deno\":true,\"node\":true,\"workerd\":true,\"bun\":true},\"updatedAt\":\"2024-06-27T08:15:03.459342Z\",\"createdAt\":\"2024-05-24T09:01:09.542826Z\",\"versionCount\":148,\"dependencyCount\":0,\"dependentCount\":239,\"score\":82,\"latestVersion\":\"4.13.9\",\"whenFeatured\":\"2024-05-27T10:41:18.144577Z\",\"isArchived\":false,\"readmeSource\":\"jsdoc\",\"symbolCount\":625}"
+  }
+}

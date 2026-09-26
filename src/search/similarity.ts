@@ -63,8 +63,9 @@ export interface SimilarityBreakdown {
    */
   anchor?: { term: string; found: 'title' | 'body' | 'none' };
   /**
-   * For messages without an anchor: how the issue's pasted stack traces compare
-   * with ours inside the same package. Absent when we have no in-package frames.
+   * How the issue's pasted stack traces compare with ours inside the same package:
+   * for messages without an anchor, and for anchored ones pasted verbatim with the
+   * same throw site. Absent otherwise.
    */
   frames?: FrameEvidence;
 }
@@ -123,12 +124,17 @@ export function frameEvidence(
   text: string,
   pkg: string,
   frames: Array<{ fn?: string; file: string }>,
+  /** Keep error-plumbing frames: fine when the message itself already matched. */
+  keepPlumbing = false,
 ): FrameEvidence | undefined {
-  const useful = frames.filter(informative);
+  const useful = keepPlumbing ? frames : frames.filter(informative);
   if (!useful.length) return undefined;
   const lines = unhash(text.replace(/\\/g, '/')).split(/\r?\n/);
   const escaped = pkg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const inPkg = new RegExp(`node_modules/(\\.(pnpm|bun)/[^/]*/node_modules/)?${escaped}/|/npm/[^/]+/${escaped}/\\d+\\.\\d+\\.\\d+`);
+  // JSR packages ("jsr:@hono/hono") run from https://jsr.io/@hono/hono/4.5.1/….
+  const inPkg = pkg.startsWith('jsr:')
+    ? new RegExp(`jsr\\.io/${escaped.slice(4)}/\\d+\\.\\d+\\.\\d+`)
+    : new RegExp(`node_modules/(\\.(pnpm|bun)/[^/]*/node_modules/)?${escaped}/|/npm/[^/]+/${escaped}/\\d+\\.\\d+\\.\\d+`);
   const pkgLines = lines.filter((l) => inPkg.test(l));
   const shows = (f: { fn?: string; file: string }) => {
     const tail = fileTail(f.file);
@@ -230,6 +236,18 @@ export function similarity(
   // trace says where it failed. Same code path → same bug; a different path
   // through the same package → a different bug.
   let frames: FrameEvidence | undefined;
+  // With an identifier: the whole message pasted in the body, the identifier in
+  // the same role, and the same throw site is the same bug, whatever the title
+  // says ("Fragment doesn't work…" for "reading 'isEscaped'"). Only ever raises.
+  // Error-plumbing frames count here: the message already pins the bug, and in a
+  // library's own error code (zod's treeifyError) they are the throw site.
+  if (a && anchor?.found !== 'none' && inBody && context?.frames.length) {
+    const f = frameEvidence(`${title}\n${b}`, context.pkg, context.frames, true);
+    if (f?.top) {
+      frames = f;
+      score = Math.min(1, Math.max(score, TOP_FRAME_FLOOR + 0.05 * (f.matched - 1)));
+    }
+  }
   if (!a && context?.frames.length) {
     frames = frameEvidence(`${title}\n${b}`, context.pkg, context.frames);
     // The same throw site plus a fair share of the message: a strong match. The

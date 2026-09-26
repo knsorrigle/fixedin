@@ -17,12 +17,16 @@ import semver from 'semver';
 import type { GitHub } from '../github/client.js';
 import { describeGitHubError } from '../github/client.js';
 import type { NetClient } from '../net/client.js';
+import { fetchJsrPackument, isJsr } from '../jsr.js';
 import { registryUrl, type RepoRef } from '../resolve/index.js';
 
 export interface Packument {
   name: string;
   versions: Record<string, { version: string; gitHead?: string; deprecated?: string }>;
   time?: Record<string, string>;
+  'dist-tags'?: Record<string, string>;
+  /** For registries without gitHead (JSR): look up a version's commit on demand. */
+  gitHeadOf?: (version: string) => Promise<string | undefined>;
 }
 
 export type Containment = 'contains' | 'missing' | 'unknown';
@@ -56,6 +60,7 @@ export const TAG_PATTERNS: Array<(name: string, v: string) => string> = [
 ];
 
 export async function fetchPackument(client: NetClient, pkg: string): Promise<Packument> {
+  if (isJsr(pkg)) return fetchJsrPackument(client, pkg);
   return client.getJson<Packument>(registryUrl(pkg));
 }
 
@@ -111,7 +116,14 @@ export class ContainmentChecker {
 
   private async probe(version: string): Promise<VersionProbe> {
     const failures: string[] = [];
-    const gitHead = this.packument.versions[version]?.gitHead;
+    let gitHead = this.packument.versions[version]?.gitHead;
+    if (!gitHead && this.packument.gitHeadOf) {
+      try {
+        gitHead = await this.packument.gitHeadOf(version);
+      } catch (err) {
+        failures.push(`provenance: ${(err as Error).message}`);
+      }
+    }
     if (gitHead) {
       const r = await this.compare(gitHead);
       if (r.status) return this.toProbe(version, gitHead, 'gitHead', r.status);
