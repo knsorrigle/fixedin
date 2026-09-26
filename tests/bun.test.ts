@@ -83,6 +83,34 @@ describe('bun.lock errors', () => {
     expect(d.diagnostics.items).toContainEqual(expect.objectContaining({ level: 'warn', stage: 'lockfile', message: expect.stringMatching(/binary lockfile/) }));
   });
 
+  describe('bun.lockb, printed by Bun as a yarn v1 lockfile', () => {
+    // Recorded: a real bun.lockb written by Bun 1.1.38, and what `bun bun.lockb` prints for it
+    // (identical from Bun 1.1.38 and 1.4.2). Tests inject the printout, so they don't need Bun.
+    const dir = join(projects, 'bun-lockb-v1.1');
+    const printed = () => readFileSync(join(dir, 'bun.lockb.txt'), 'utf8');
+
+    it.each([
+      ['', '1.5.0'],
+      ['packages/web', '1.1.3'],
+    ])('workspace %j loads axios %s', (ws, version) => {
+      const r = readBunLock(join(dir, 'bun.lockb'), join(dir, ws), printed);
+      expect(r).toMatchObject({ kind: 'bun', file: join(dir, 'bun.lockb') });
+      expect(r.flavor).toBeUndefined();
+      expect(r.find('axios')[0]).toMatchObject({ version, topLevel: true });
+    });
+
+    it('npm: aliases resolve as in bun.lock', () => {
+      expect(readBunLock(join(dir, 'bun.lockb'), join(dir, 'packages/web'), printed).find('string-width')[0]!.version).toBe('4.2.3');
+    });
+
+    it('when Bun can\'t print it, says why and how to convert', () => {
+      const fail = () => {
+        throw new Error('Bun is not installed');
+      };
+      expect(() => readBunLock(join(dir, 'bun.lockb'), dir, fail)).toThrow(/couldn't have Bun print it \(Bun is not installed\)\. Install Bun, or run `bun install --save-text-lockfile`/);
+    });
+  });
+
   it('prefers bun.lock over a leftover bun.lockb', () => {
     const dir = mkdtempSync(join(tmpdir(), 'fixedin-bun-'));
     writeFileSync(join(dir, 'bun.lockb'), '');

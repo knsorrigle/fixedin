@@ -14,14 +14,19 @@
  * Keys are install paths, so resolution mirrors Node's: for a dependency `d` of
  * workspace `N`, "N/d" wins over the hoisted "d".
  *
- * The older binary bun.lockb can't be read; the error says how to convert it.
+ * The older binary bun.lockb (the default before Bun 1.2) isn't parsed
+ * directly: Bun itself prints it as a yarn v1 lockfile (`bun bun.lockb`, in
+ * every Bun version), which the yarn reader handles, workspaces included. Without Bun
+ * installed, the error says how to convert it.
  */
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import semver from 'semver';
 import type { Dependent, InstalledPackage, LockfileReader } from './index.js';
 import { LockfileError } from './index.js';
 import { selectImporter } from './pnpm.js';
+import { parseYarnLock } from './yarn.js';
 
 const DEP_FIELDS = ['dependencies', 'devDependencies', 'optionalDependencies'] as const;
 
@@ -225,12 +230,33 @@ export function resolveBunKey(packages: Record<string, unknown>, from: string, d
   return undefined;
 }
 
-export function readBunLock(path: string, cwd: string = dirname(path)): LockfileReader {
+/** Runs `bun bun.lockb` and returns what it prints; injectable for tests. */
+export type PrintLockb = (path: string) => string;
+
+const printWithBun: PrintLockb = (path) => {
+  try {
+    // `bun <file>.lockb` prints the lockfile; it must run from the lockfile's directory.
+    return execFileSync('bun', [basename(path)], { cwd: dirname(path), encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, timeout: 30_000, stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (err) {
+    const e = err as NodeJS.ErrnoException & { stderr?: string };
+    throw new Error(e.code === 'ENOENT' ? 'Bun is not installed' : (e.stderr || e.message).trim());
+  }
+};
+
+export function readBunLock(path: string, cwd: string = dirname(path), printLockb: PrintLockb = printWithBun): LockfileReader {
   if (path.endsWith('.lockb')) {
-    throw new LockfileError(
-      `Found ${path}, Bun's binary lockfile, which fixedin can't read. Run \`bun install --save-text-lockfile\` (Bun ≥1.1.39; the default since 1.2) to create bun.lock. Falling back to node_modules.`,
-      [path],
-    );
+    let text: string;
+    try {
+      text = printLockb(path);
+    } catch (err) {
+      throw new LockfileError(
+        `Found ${path}, Bun's binary lockfile, and couldn't have Bun print it (${(err as Error).message}). Install Bun, or run \`bun install --save-text-lockfile\` (Bun ≥1.1.39; the default since 1.2) to create bun.lock. Falling back to node_modules.`,
+        [path],
+      );
+    }
+    // Same versions and workspaces as the binary file, as a yarn v1 lockfile.
+    const { flavor: _yarnFlavor, ...reader } = parseYarnLock(text, path, cwd);
+    return { ...reader, kind: 'bun' };
   }
   let text: string;
   try {
