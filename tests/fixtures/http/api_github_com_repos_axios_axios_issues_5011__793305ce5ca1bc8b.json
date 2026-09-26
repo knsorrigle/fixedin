@@ -1,0 +1,37 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.github.com/repos/axios/axios/issues/5011"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "accept-ranges": "bytes",
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "cache-control": "public, max-age=60, s-maxage=60",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 26 Sep 2026 19:08:29 GMT",
+      "etag": "W/\"7bce782399dac117cff726cae86aba0d68bbfb3581145b1b539ea0f8fa301953\"",
+      "last-modified": "Sun, 20 Sep 2026 15:00:13 GMT",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept,Accept-Encoding, Accept, X-Requested-With",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-api-version-selected": "2022-11-28",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "295E:34F497:1473A07:16E151E:6AB8183C",
+      "x-ratelimit-limit": "60",
+      "x-ratelimit-remaining": "40",
+      "x-ratelimit-reset": "1790453084",
+      "x-ratelimit-resource": "core",
+      "x-ratelimit-used": "20",
+      "x-xss-protection": "0"
+    },
+    "body": "{\"number\":5011,\"title\":\"[1.0.0] TypeError: Cannot read properties of undefined (reading 'create')\",\"html_url\":\"https://github.com/axios/axios/issues/5011\",\"state\":\"closed\",\"state_reason\":\"completed\",\"closed_at\":\"2022-10-30T16:46:20Z\"}"
+  }
+}

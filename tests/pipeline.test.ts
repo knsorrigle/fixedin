@@ -43,16 +43,14 @@ describe('run: detect → search (recorded)', () => {
     expect(r.searches.find((s) => s.repo.repo === 'vite')!.matches.length).toBe(3);
   });
 
-  it('unauthenticated: warns once and uses lexical search', async () => {
+  it('unauthenticated: warns once, uses lexical search, and still traces the issue', async () => {
     const r = await run(stack('axios-headers'), { cwd, client, limit: 5, auth: anon });
     expect(r.searches[0]!.modeUsed).toBe('lexical');
     expect(r.searches[0]!.matches[0]!.number).toBe(5004);
     const warns = r.detect.diagnostics.items.filter((d) => d.level === 'warn');
-    expect(warns).toEqual([
-      expect.objectContaining({ stage: 'auth', tried: ['GITHUB_TOKEN: not set'] }),
-      expect.objectContaining({ stage: 'trace', message: expect.stringContaining('requires a GitHub token') }),
-    ]);
-    expect(r.verdicts[0]).toMatchObject({ kind: 'CLOSED_NO_FIX_FOUND', match: { number: 5004 } });
+    expect(warns).toEqual([expect.objectContaining({ stage: 'auth', tried: ['GITHUB_TOKEN: not set'] })]);
+    // Traced from the REST timeline: the same answer a token gets (closed manually, no fix).
+    expect(r.verdicts[0]).toMatchObject({ kind: 'CLOSED_NO_FIX_FOUND', match: { number: 5004 }, advice: expect.stringContaining('Closed without a linked fix') });
   });
 
   it('--repo searches only that repo', async () => {

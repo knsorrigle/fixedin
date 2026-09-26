@@ -1,0 +1,37 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.github.com/repos/vitejs/vite/issues/10358"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "accept-ranges": "bytes",
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "cache-control": "public, max-age=60, s-maxage=60",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 26 Sep 2026 19:08:51 GMT",
+      "etag": "W/\"233527592bd225c3d4165c4a8f97c65e51bf0cadc0d667c98fbef81b8e68b154\"",
+      "last-modified": "Tue, 28 Jul 2026 05:19:01 GMT",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept,Accept-Encoding, Accept, X-Requested-With",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-api-version-selected": "2022-11-28",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "2960:3B6422:14339DF:16A14F6:6AB81843",
+      "x-ratelimit-limit": "60",
+      "x-ratelimit-remaining": "20",
+      "x-ratelimit-reset": "1790453084",
+      "x-ratelimit-resource": "core",
+      "x-ratelimit-used": "40",
+      "x-xss-protection": "0"
+    },
+    "body": "{\"number\":10358,\"title\":\"ES module error after updating `3.1.5`, \",\"html_url\":\"https://github.com/vitejs/vite/issues/10358\",\"state\":\"closed\",\"state_reason\":\"completed\",\"closed_at\":\"2022-10-06T13:59:47Z\"}"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.github.com/repos/axios/axios/issues/5004/timeline?per_page=100&page=1"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "accept-ranges": "bytes",
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "cache-control": "public, max-age=60, s-maxage=60",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 26 Sep 2026 19:08:46 GMT",
+      "etag": "W/\"5fd7564a74b2b48c80c950093f32ed33dc8eedf623bd92e0f8b28d48c92a688d\"",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept,Accept-Encoding, Accept, X-Requested-With",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-api-version-selected": "2022-11-28",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "295F:35FE2F:14BD166:172A504:6AB8183E",
+      "x-ratelimit-limit": "60",
+      "x-ratelimit-remaining": "27",
+      "x-ratelimit-reset": "1790453084",
+      "x-ratelimit-resource": "core",
+      "x-ratelimit-used": "33",
+      "x-xss-protection": "0"
+    },
+    "body": "[{\"event\":\"cross-referenced\",\"created_at\":\"2022-10-07T07:37:12Z\",\"source\":{\"issue\":{\"number\":5031,\"title\":\"Exported classes in type definition are not actually exported\",\"html_url\":\"https://github.com/axios/axios/issues/5031\",\"repository\":{\"full_name\":\"axios/axios\"}}}},{\"event\":\"cross-referenced\",\"created_at\":\"2022-11-18T09:39:57Z\",\"source\":{\"issue\":{\"number\":1079,\"title\":\"chore: bump axios from 0.27.2 to 1.1.3\",\"html_url\":\"https://github.com/ffflorian/gh-open/pull/1079\",\"repository\":{\"full_name\":\"ffflorian/gh-open\"},\"pull_request\":{\"merged_at\":null,\"html_url\":\"https://github.com/ffflorian/gh-open/pull/1079\"}}}},{\"event\":\"cross-referenced\",\"created_at\":\"2022-11-18T09:40:13Z\",\"source\":{\"issue\":{\"number\":1132,\"title\":\"chore: bump axios from 0.27.2 to 1.1.3\",\"html_url\":\"https://github.com/ffflorian/electron-info/pull/1132\",\"repository\":{\"full_name\":\"ffflorian/electron-info\"},\"pull_request\":{\"merged_at\":null,\"html_url\":\"https://github.com/ffflorian/electron-info/pull/1132\"}}}},{\"event\":\"cross-referenced\",\"created_at\":\"2022-11-18T09:40:22Z\",\"source\":{\"issue\":{\"number\":1113,\"title\":\"chore: bump axios from 0.27.2 to 1.1.3\",\"html_url\":\"https://github.com/ffflorian/api-clients/pull/1113\",\"repository\":{\"full_name\":\"ffflorian/api-clients\"},\"pull_request\":{\"merged_at\":null,\"html_url\":\"https://github.com/ffflorian/api-clients/pull/1113\"}}}},{\"event\":\"cross-referenced\",\"created_at\":\"2022-11-18T09:40:45Z\",\"source\":{\"issue\":{\"number\":823,\"title\":\"chore: bump axios from 0.27.2 to 1.1.3\",\"html_url\":\"https://github.com/ffflorian/auto-approver/pull/823\",\"repository\":{\"full_name\":\"ffflorian/auto-approver\"},\"pull_request\":{\"merged_at\":null,\"html_url\":\"https://github.com/ffflorian/auto-approver/pull/823\"}}}},{\"event\":\"closed\",\"created_at\":\"2024-09-29T11:15:57Z\",\"commit_id\":null,\"commit_url\":null,\"state_reason\":null},{\"event\":\"cross-referenced\",\"created_at\":\"2026-08-07T18:25:46Z\",\"source\":{\"issue\":{\"number\":72,\"title\":\"fix(fiscal): IBPT fora do ar não pode travar a emissão — importação por arquivo + diagnóstico\",\"html_url\":\"https://github.com/Taino-Edu/Tenant-ERP_Model/pull/72\",\"repository\":{\"full_name\":\"Taino-Edu/Tenant-ERP_Model\"},\"pull_request\":{\"merged_at\":\"2026-08-07T18:35:24Z\",\"html_url\":\"https://github.com/Taino-Edu/Tenant-ERP_Model/pull/72\"}}}}]"
+  }
+}

@@ -87,6 +87,8 @@ async function describeRequest(input: string | URL | Request, init?: RequestInit
  * reviewable. Only whole fields are removed; nothing is rewritten.
  *   compare:   ~470KB of files/commits → status counts
  *   packument: readme, per-version metadata → version, gitHead, dependency ranges, time
+ *   issue timeline / issue / pull (the tokenless trace, trace/rest.ts): only the
+ *     events and fields it reads — a busy timeline shrinks from ~400KB to a few KB
  */
 export function slimFixtureBody(url: string, body: string): string {
   let json: Record<string, unknown>;
@@ -94,6 +96,15 @@ export function slimFixtureBody(url: string, body: string): string {
     json = JSON.parse(body) as Record<string, unknown>;
   } catch {
     return body;
+  }
+  const issueUrl = url.match(/api\.github\.com\/repos\/([^/]+\/[^/]+)\/(issues|pulls)\/\d+(\/timeline)?(?:\?|$)/);
+  if (issueUrl?.[3] && Array.isArray(json)) return JSON.stringify(json.map((e) => slimTimelineEvent(e, issueUrl[1]!)).filter(Boolean));
+  if (issueUrl && !issueUrl[3] && typeof json.number === 'number') {
+    return JSON.stringify(
+      issueUrl[2] === 'pulls'
+        ? pick(json, ['number', 'title', 'html_url', 'merged_at', 'merge_commit_sha', 'base'], { base: ['ref'] })
+        : pick(json, ['number', 'title', 'html_url', 'state', 'state_reason', 'closed_at']),
+    );
   }
   if (/api\.github\.com\/repos\/[^/]+\/[^/]+\/compare\//.test(url) && 'status' in json) {
     const { status, ahead_by, behind_by, total_commits } = json;
@@ -114,6 +125,50 @@ export function slimFixtureBody(url: string, body: string): string {
     return JSON.stringify({ name: json.name, 'dist-tags': json['dist-tags'], versions, time: json.time });
   }
   return body;
+}
+
+/** Copy only `keys` (and, for nested objects, only their listed keys). Missing keys stay missing. */
+function pick(obj: Record<string, unknown>, keys: string[], nested: Record<string, string[]> = {}): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of keys) {
+    if (!(k in obj)) continue;
+    const v = obj[k];
+    out[k] = nested[k] && v && typeof v === 'object' ? pick(v as Record<string, unknown>, nested[k]!) : v;
+  }
+  return out;
+}
+
+/**
+ * The timeline events trace/rest.ts reads; everything else (labels, other
+ * comments, …) is dropped. PR descriptions are kept only for PRs in `repo`,
+ * the only ones whose closing keywords count.
+ */
+function slimTimelineEvent(e: unknown, repo: string): Record<string, unknown> | undefined {
+  const ev = e as Record<string, unknown>;
+  switch (ev.event) {
+    case 'closed':
+      return pick(ev, ['event', 'created_at', 'commit_id', 'commit_url', 'state_reason']);
+    case 'reopened':
+      return pick(ev, ['event', 'created_at']);
+    case 'commented':
+      return typeof ev.body === 'string' && /^\s*Duplicate of #\d+/m.test(ev.body) ? pick(ev, ['event', 'created_at', 'body']) : undefined;
+    case 'cross-referenced': {
+      const issue = (ev.source as { issue?: Record<string, unknown> } | undefined)?.issue;
+      if (!issue) return pick(ev, ['event', 'created_at']);
+      const sameRepo = (issue.repository as { full_name?: string } | undefined)?.full_name?.toLowerCase() === repo.toLowerCase();
+      return {
+        ...pick(ev, ['event', 'created_at']),
+        source: {
+          issue: pick(issue, ['number', 'title', 'html_url', 'repository', 'pull_request', ...(issue.pull_request && sameRepo ? ['body'] : [])], {
+            repository: ['full_name'],
+            pull_request: ['merged_at', 'html_url'],
+          }),
+        },
+      };
+    }
+    default:
+      return undefined;
+  }
 }
 
 /** Wraps a fetch so every exchange is written to `dir` as a JSON fixture. */

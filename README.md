@@ -170,7 +170,7 @@ Each error costs a few searches, and hybrid search allows 10 per minute, so a lo
 | `ALREADY_HAVE_FIX` ! | Your version already contains the fix. You're probably hitting a *different* bug with the same message. |
 | `FIX_UNRELEASED` ◐ | The fix is merged but no npm release contains it yet. |
 | `OPEN_ISSUE` ● | Known, still open. If a comment in the thread looks like a workaround (code block or many 👍), it's shown. |
-| `CLOSED_NO_FIX_FOUND` ? | A matching issue is closed, but no fixing PR/commit could be traced (closed manually, stale bot, "not planned", or no GitHub token). |
+| `CLOSED_NO_FIX_FOUND` ? | A matching issue is closed, but no fixing PR/commit could be traced (closed manually, stale bot, "not planned"). |
 | `NO_MATCH` ○ | Nothing similar enough. Might be new — consider reporting it. |
 
 Matches with similarity between 0.60 and 0.75 are labelled **weak match**: treat those verdicts as a lead, not an answer.
@@ -223,10 +223,10 @@ Every failure is reported with what was tried and why it failed — use `--verbo
 
 fixedin looks for a token in `GITHUB_TOKEN`, then `GH_TOKEN`, then `gh auth token` (GitHub CLI). No special scopes are needed for public repos.
 
-Without a token it still runs, but:
+Without a token it still gives full answers — the matching issue, the fixing PR and the release that ships it — with three differences:
 - hybrid search is unavailable (GitHub requires auth for it), so only lexical search is used;
-- fix tracing is skipped (GitHub's GraphQL API requires auth);
-- rate limits are much lower.
+- fixes are traced from the public REST timeline instead of GraphQL (which requires auth). GitHub's REST API doesn't say which PR closed an issue, so fixedin looks for a same-repo PR whose description says it fixes the issue ("Fixes #123") and that was merged within a minute of the close — the signature of GitHub closing it. A PR linked only from the issue's sidebar isn't visible there;
+- GitHub allows 60 requests an hour. A typical run uses 10–15, and the cache makes repeats free; when the quota runs out fixedin says when it resets.
 
 ## Cache and rate limits
 

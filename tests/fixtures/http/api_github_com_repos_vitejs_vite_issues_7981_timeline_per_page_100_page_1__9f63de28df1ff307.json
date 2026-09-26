@@ -1,0 +1,36 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.github.com/repos/vitejs/vite/issues/7981/timeline?per_page=100&page=1"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "accept-ranges": "bytes",
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "cache-control": "public, max-age=60, s-maxage=60",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 26 Sep 2026 19:08:50 GMT",
+      "etag": "W/\"969619a4a91028a4b77d67b107c389bf1733cbbf514a97bf724e3e6c883ab2a7\"",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept,Accept-Encoding, Accept, X-Requested-With",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-api-version-selected": "2022-11-28",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "2960:3B6422:1433903:16A13C2:6AB81841",
+      "x-ratelimit-limit": "60",
+      "x-ratelimit-remaining": "23",
+      "x-ratelimit-reset": "1790453084",
+      "x-ratelimit-resource": "core",
+      "x-ratelimit-used": "37",
+      "x-xss-protection": "0"
+    },
+    "body": "[{\"event\":\"closed\",\"created_at\":\"2022-05-01T16:50:41Z\",\"commit_id\":null,\"commit_url\":null,\"state_reason\":null}]"
+  }
+}

@@ -1,6 +1,7 @@
 /**
  * trace/: for a closed issue, find the PR or commit that fixed it, via the
- * GraphQL issue timeline.
+ * GraphQL issue timeline — or, without a token (GraphQL always needs one),
+ * the REST timeline rebuilt into the same shape (rest.ts).
  *
  * Only PRs/commits in the issue's own repository count. Popular issues collect
  * dozens of cross-references from downstream repos ("bump axios to 1.2.0"),
@@ -14,6 +15,7 @@
  */
 import type { GitHub } from '../github/client.js';
 import type { RepoRef } from '../resolve/index.js';
+import { fetchRestTimeline } from './rest.js';
 
 export type FixEvidence = 'closed-by-pr' | 'closed-by-commit' | 'linked-pr' | 'referenced-pr-near-close';
 
@@ -39,7 +41,7 @@ export interface TraceResult {
   notes: string[];
 }
 
-interface PrNode {
+export interface PrNode {
   __typename: 'PullRequest';
   number: number;
   title: string;
@@ -50,13 +52,13 @@ interface PrNode {
   mergeCommit: { oid: string } | null;
   repository: { nameWithOwner: string };
 }
-interface CommitNode {
+export interface CommitNode {
   __typename: 'Commit';
   oid: string;
   url: string;
   repository: { nameWithOwner: string };
 }
-type TimelineNode =
+export type TimelineNode =
   | { __typename: 'ClosedEvent'; createdAt: string; closer: PrNode | CommitNode | { __typename: 'ProjectV2' } | null }
   | { __typename: 'ReopenedEvent'; createdAt: string }
   | { __typename: 'CrossReferencedEvent'; createdAt: string; willCloseTarget: boolean; source: PrNode | { __typename: 'Issue' } }
@@ -101,7 +103,14 @@ interface TimelineResponse {
 /** Busy issues can have thousands of cross-references; stop paging after this. */
 const MAX_PAGES = 5;
 
-export async function fetchTimeline(gh: GitHub, repo: RepoRef, number: number) {
+export interface Timeline {
+  issue: TraceResult['issue'];
+  nodes: TimelineNode[];
+  /** Set when not every event could be read. */
+  truncated?: string;
+}
+
+export async function fetchTimeline(gh: GitHub, repo: RepoRef, number: number): Promise<Timeline> {
   const nodes: TimelineNode[] = [];
   let before: string | null = null;
   let issue: NonNullable<NonNullable<TimelineResponse['repository']>['issue']> | undefined;
@@ -121,7 +130,12 @@ export async function fetchTimeline(gh: GitHub, repo: RepoRef, number: number) {
     before = i.timelineItems.pageInfo.startCursor;
     if (page === MAX_PAGES - 1) truncated = true;
   }
-  return { issue: issue!, nodes, truncated };
+  const { number: n, state, stateReason, closedAt, url } = issue!;
+  return {
+    issue: { number: n, state, stateReason, closedAt, url },
+    nodes,
+    ...(truncated ? { truncated: `Timeline has more than ${MAX_PAGES * 100} events; only the latest ${MAX_PAGES * 100} were read.` } : {}),
+  };
 }
 
 const sameRepo = (nameWithOwner: string, repo: RepoRef) => nameWithOwner.toLowerCase() === `${repo.owner}/${repo.repo}`.toLowerCase();
@@ -216,14 +230,11 @@ export function pickFix(nodes: TimelineNode[], repo: RepoRef): { fix?: FixRef; n
 }
 
 export async function traceFix(gh: GitHub, repo: RepoRef, number: number, followDuplicate = true): Promise<TraceResult> {
-  const { issue, nodes, truncated } = await fetchTimeline(gh, repo, number);
+  const { issue, nodes, truncated } = gh.authenticated ? await fetchTimeline(gh, repo, number) : await fetchRestTimeline(gh, repo, number);
   const { fix, notes } = pickFix(nodes, repo);
-  if (truncated) notes.push(`Timeline has more than ${MAX_PAGES * 100} events; only the latest ${MAX_PAGES * 100} were read.`);
-  const result: TraceResult = {
-    issue: { number: issue.number, state: issue.state, stateReason: issue.stateReason, closedAt: issue.closedAt, url: issue.url },
-    ...(fix ? { fix } : {}),
-    notes,
-  };
+  if (!gh.authenticated) notes.unshift('Read from the public REST timeline (no token).');
+  if (truncated) notes.push(truncated);
+  const result: TraceResult = { issue, ...(fix ? { fix } : {}), notes };
 
   if (!fix && followDuplicate && issue.stateReason === 'DUPLICATE') {
     const dup = [...nodes].reverse().find((n) => n.__typename === 'MarkedAsDuplicateEvent') as

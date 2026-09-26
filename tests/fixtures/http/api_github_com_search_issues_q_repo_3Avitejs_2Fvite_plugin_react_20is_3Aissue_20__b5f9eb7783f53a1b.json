@@ -1,0 +1,35 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.github.com/search/issues?q=repo%3Avitejs%2Fvite-plugin-react%20is%3Aissue%20require%20of%20ES%20Module%20not%20supported.%20ERR_REQUIRE_ESM&per_page=20"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "accept-ranges": "bytes",
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning",
+      "cache-control": "no-cache",
+      "content-security-policy": "default-src 'none'",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sat, 26 Sep 2026 19:08:47 GMT",
+      "referrer-policy": "origin-when-cross-origin, strict-origin-when-cross-origin",
+      "server": "github.com",
+      "strict-transport-security": "max-age=31536000; includeSubdomains; preload",
+      "vary": "Accept,Accept-Encoding, Accept, X-Requested-With",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "deny",
+      "x-github-api-version-selected": "2022-11-28",
+      "x-github-edge-region": "centralindia",
+      "x-github-media-type": "github.v3; format=json",
+      "x-github-request-id": "2960:3B6422:143371D:16A119F:6AB8183F",
+      "x-ratelimit-limit": "10",
+      "x-ratelimit-remaining": "6",
+      "x-ratelimit-reset": "1790449768",
+      "x-ratelimit-resource": "search",
+      "x-ratelimit-used": "4",
+      "x-xss-protection": "0"
+    },
+    "body": "{\"total_count\":0,\"incomplete_results\":false,\"items\":[],\"search_type\":\"lexical\"}"
+  }
+}

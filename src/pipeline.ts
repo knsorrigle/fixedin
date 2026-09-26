@@ -163,7 +163,7 @@ export async function run(input: string, opts: RunOptions): Promise<RunResult> {
   if (!auth.token) {
     diag.warn(
       'auth',
-      'No GitHub token found, running unauthenticated: hybrid (semantic) issue search is unavailable, so results come from lexical search only, and rate limits are much lower. Set GITHUB_TOKEN or run `gh auth login`.',
+      'No GitHub token found, running unauthenticated: issue search is lexical only (hybrid search needs a token), fixes are traced from the public REST timeline (a PR linked only in the sidebar is missed), and GitHub allows 60 requests an hour. Set GITHUB_TOKEN or run `gh auth login`.',
       auth.tried,
     );
   } else {
@@ -336,13 +336,6 @@ async function judge(
     if (match.stateReason === 'not_planned') {
       fallback ??= { ...base, kind: 'CLOSED_NO_FIX_FOUND', match, advice: `Closed as not planned — upstream won't fix this. Read the thread for the recommended approach.`, reasons: [`#${match.number} was closed as not planned.`] };
       continue;
-    }
-
-    if (!gh.authenticated) {
-      // GraphQL rejects every unauthenticated call; don't burn requests on it.
-      const why = 'tracing the fix uses the GraphQL API, which requires a GitHub token';
-      diag.warn('trace', `Skipped tracing ${name}#${match.number}: ${why}. Set GITHUB_TOKEN or run \`gh auth login\`.`);
-      return { ...base, kind: 'CLOSED_NO_FIX_FOUND', match, advice: `#${match.number} is closed, but the fix can't be traced without a GitHub token. Read the issue.`, reasons: [why] };
     }
 
     let trace: TraceResult;
