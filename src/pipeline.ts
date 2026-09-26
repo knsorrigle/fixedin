@@ -17,6 +17,7 @@ import { traceFix, type TraceResult } from './trace/index.js';
 import { crossesMajor, decideFixed, MATCH_THRESHOLD, pickWorkaround, type IssueComment, type Verdict } from './verdict/index.js';
 import type { Diagnostic, Diagnostics } from './diagnostics.js';
 import { parseError } from './parse/index.js';
+import { demux, type PrefixScheme } from './parse/demux.js';
 import { isErrorStart, splitErrors, type ErrorBlock } from './parse/split.js';
 import type { GitHub } from './github/client.js';
 
@@ -81,13 +82,17 @@ export interface LogRunOptions extends RunOptions {
 export interface ErrorRun extends RunResult {
   /** 1-based input lines where this error starts; length = how often it occurred. */
   lines: number[];
+  /** The monorepo task or service whose output it came from ("@shop/web:test", "api-1"). */
+  source?: string;
 }
 
 export interface LogRunResult {
   errors: ErrorRun[];
   /** Distinct errors that weren't checked, and why. */
-  skipped: Array<{ line: number; query: string; reason: SkipReason }>;
+  skipped: Array<{ line: number; query: string; reason: SkipReason; source?: string }>;
   auth: Pick<AuthResult, 'source'>;
+  /** The line-labelling scheme that was stripped. */
+  prefixes?: PrefixScheme;
 }
 
 export type SkipReason = 'not-an-error' | 'no-package' | 'limit';
@@ -106,41 +111,60 @@ const DEFAULT_MAX_ERRORS = 5;
  */
 export async function runLog(input: string, opts: LogRunOptions): Promise<LogRunResult> {
   const auth = opts.auth ?? (await resolveToken());
-  const one = async (): Promise<LogRunResult> => ({
-    errors: [{ ...(await run(input, { ...opts, auth })), lines: [1] }],
-    skipped: [],
-    auth: { source: auth.source },
-  });
+  const { scheme, streams } = demux(input);
+  const prefixes = scheme ? { prefixes: scheme } : {};
 
-  const distinct = new Map<string, { block: ErrorBlock; query: string; lines: number[]; skip?: SkipReason }>();
-  for (const block of splitErrors(input)) {
-    const parsed = parseError(block.text);
-    if (!parsed.query) continue;
-    // Test runners' own frames (jest, vitest) are in nearly every failure; they don't make it an upstream bug.
-    const culprit = parsed.packages.find((p) => !p.lowSignal);
-    const key = `${parsed.query}\u0000${culprit?.name ?? ''}`;
-    const seen = distinct.get(key);
-    if (seen) seen.lines.push(block.line);
-    else {
-      const skip = !isErrorStart(parsed.messageLine) ? 'not-an-error' : !culprit && !opts.repo ? 'no-package' : undefined;
-      distinct.set(key, { block, query: parsed.query, lines: [block.line], ...(skip ? { skip } : {}) });
+  type Distinct = { block: ErrorBlock; stream: (typeof streams)[number]; query: string; lines: number[]; sources: Set<string>; skip?: SkipReason };
+  const distinct = new Map<string, Distinct>();
+  for (const stream of streams) {
+    for (const block of splitErrors(stream.text)) {
+      if (!block.failure) continue; // plain output: a tool's banner or summary
+      const parsed = parseError(block.text);
+      if (!parsed.query) continue;
+      // Back to the input's own line numbers (a stream is a subset of its lines).
+      const line = stream.lines[block.line - 1] ?? block.line;
+      // Test runners' own frames (jest, vitest) are in nearly every failure; they don't make it an upstream bug.
+      const culprit = parsed.packages.find((p) => !p.lowSignal);
+      const key = `${parsed.query}\u0000${culprit?.name ?? ''}`;
+      const seen = distinct.get(key);
+      if (seen) {
+        seen.lines.push(line);
+        if (stream.label) seen.sources.add(stream.label);
+      } else {
+        const skip = !isErrorStart(parsed.messageLine) ? 'not-an-error' : !culprit && !opts.repo ? 'no-package' : undefined;
+        distinct.set(key, { block, stream, query: parsed.query, lines: [line], sources: new Set(stream.label ? [stream.label] : []), ...(skip ? { skip } : {}) });
+      }
     }
   }
-  const all = [...distinct.values()];
+  // In input order, whichever stream each came from.
+  const all = [...distinct.values()].map((e) => ({ ...e, lines: e.lines.sort((a, b) => a - b) })).sort((a, b) => a.lines[0]! - b.lines[0]!);
+  const source = (e: Distinct) => (e.sources.size ? { source: [...e.sources].join(', ') } : {});
   const checkable = all.filter((e) => !e.skip);
-  if (checkable.length <= 1) return one();
+
+  // A single error: the whole input (or, with prefixes, its whole stream) as one, like run().
+  if (checkable.length <= 1) {
+    const only = checkable[0];
+    const text = !scheme ? input : only ? only.stream.text : streams.map((s) => s.text).join('\n');
+    return {
+      errors: [{ ...(await run(text, { ...opts, auth })), lines: only && scheme ? only.lines : [1], ...(only ? source(only) : {}) }],
+      skipped: [],
+      auth: { source: auth.source },
+      ...prefixes,
+    };
+  }
 
   const max = opts.maxErrors ?? DEFAULT_MAX_ERRORS;
   const errors: ErrorRun[] = [];
   // Sequential, like the repos within one error: search quotas are per minute.
-  for (const e of checkable.slice(0, max)) errors.push({ ...(await run(e.block.text, { ...opts, auth })), lines: e.lines });
+  for (const e of checkable.slice(0, max)) errors.push({ ...(await run(e.block.text, { ...opts, auth })), lines: e.lines, ...source(e) });
   return {
     errors,
     skipped: [
-      ...all.filter((e) => e.skip).map((e) => ({ line: e.lines[0]!, query: e.query, reason: e.skip! })),
-      ...checkable.slice(max).map((e) => ({ line: e.lines[0]!, query: e.query, reason: 'limit' as const })),
+      ...all.filter((e) => e.skip).map((e) => ({ line: e.lines[0]!, query: e.query, reason: e.skip!, ...source(e) })),
+      ...checkable.slice(max).map((e) => ({ line: e.lines[0]!, query: e.query, reason: 'limit' as const, ...source(e) })),
     ].sort((a, b) => a.line - b.line),
     auth: { source: auth.source },
+    ...prefixes,
   };
 }
 

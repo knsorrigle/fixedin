@@ -1,0 +1,114 @@
+• Packages in scope: @shop/api, @shop/web
+• Running test in 2 packages
+• Remote caching disabled
+@shop/api:test: cache miss, executing 5e1b0c2a9f3d7e41
+@shop/web:test: cache miss, executing 0b7a3c55e1d2f986
+@shop/api:test: 
+@shop/api:test: > @shop/api@1.0.0 test
+@shop/api:test: > node --test
+@shop/api:test: 
+@shop/web:test: 
+@shop/web:test: > @shop/web@1.0.0 test
+@shop/web:test: > jest
+@shop/web:test: 
+@shop/web:test:  FAIL  src/__tests__/api.test.ts
+@shop/web:test:   ● Test suite failed to run
+@shop/web:test: 
+@shop/api:test: TypeError: Cannot read properties of undefined (reading 'headers')
+@shop/api:test:     at settle (/Users/dev/shop-api/node_modules/axios/lib/core/settle.js:19:34)
+@shop/web:test:     SyntaxError: Cannot use import statement outside a module
+@shop/web:test: 
+@shop/web:test:       1 | import { describe } from '@jest/globals';
+@shop/api:test:     at IncomingMessage.handleStreamEnd (/Users/dev/shop-api/node_modules/axios/lib/adapters/http.js:572:11)
+@shop/api:test:     at IncomingMessage.emit (node:events:531:35)
+@shop/web:test:     > 2 | import { nanoid } from 'nanoid';
+@shop/web:test:         | ^
+@shop/web:test: 
+@shop/api:test:     at endReadableNT (node:internal/streams/readable:1696:12)
+@shop/api:test:     at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+@shop/web:test:       at Runtime.createScriptFromCode (node_modules/jest-runtime/build/index.js:1505:14)
+@shop/web:test:       at Object.<anonymous> (node_modules/nanoid/index.browser.js:1:1)
+@shop/web:test:       at Object.<anonymous> (src/__tests__/api.test.ts:2:1)
+@shop/api:test:     at Axios.request (/Users/dev/shop-api/node_modules/axios/lib/core/Axios.js:45:41)
+@shop/api:test:     at async fetchOrders (/Users/dev/shop-api/src/orders.ts:14:20)
+@shop/web:test:       at TestScheduler.scheduleTests (node_modules/@jest/core/build/TestScheduler.js:333:13)
+@shop/web:test:       at runJest (node_modules/@jest/core/build/runJest.js:404:19)
+@shop/web:test: 
+@shop/api:test: 
+@shop/api:test: failed to load config from /Users/kim/app/vite.config.ts
+@shop/web:test:  FAIL  src/orders.test.ts
+@shop/web:test:   ● orders › lists orders
+@shop/web:test: 
+@shop/api:test: error when starting dev server:
+@shop/api:test: Error [ERR_REQUIRE_ESM]: require() of ES Module /Users/kim/app/node_modules/@vitejs/plugin-react/dist/index.mjs not supported.
+@shop/web:test:     TypeError: Cannot read properties of undefined (reading 'headers')
+@shop/web:test: 
+@shop/web:test:       at settle (/Users/dev/shop-api/node_modules/axios/lib/core/settle.js:19:34)
+@shop/api:test: Instead change the require of index.mjs in /Users/kim/app/vite.config.ts.timestamp-1700000000000-7c1e9a2b3d4f5.mjs to a dynamic import() which is available in all CommonJS modules.
+@shop/api:test:     at Object.<anonymous> (/Users/kim/app/vite.config.ts.timestamp-1700000000000-7c1e9a2b3d4f5.mjs:5:28)
+@shop/web:test:       at IncomingMessage.handleStreamEnd (/Users/dev/shop-api/node_modules/axios/lib/adapters/http.js:572:11)
+@shop/web:test:       at IncomingMessage.emit (node:events:531:35)
+@shop/web:test:       at endReadableNT (node:internal/streams/readable:1696:12)
+@shop/api:test:     at loadConfigFromBundledFile (file:///Users/kim/app/node_modules/vite/dist/node/chunks/dep-8f5c9b2e.js:66654:15)
+@shop/api:test:     at async loadConfigFromFile (file:///Users/kim/app/node_modules/vite/dist/node/chunks/dep-8f5c9b2e.js:66493:24)
+@shop/web:test:       at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+@shop/web:test:       at Axios.request (/Users/dev/shop-api/node_modules/axios/lib/core/Axios.js:45:41)
+@shop/web:test:       at async fetchOrders (/Users/dev/shop-api/src/orders.ts:14:20)
+@shop/api:test:     at async createServer (file:///Users/kim/app/node_modules/vite/dist/node/chunks/dep-8f5c9b2e.js:66090:28)
+@shop/web:test: 
+@shop/web:test:   ● orders › paginates
+@shop/web:test: 
+@shop/web:test:     TypeError: Cannot read properties of undefined (reading 'headers')
+@shop/web:test: 
+@shop/web:test:       at settle (/Users/dev/shop-api/node_modules/axios/lib/core/settle.js:19:34)
+@shop/web:test:       at IncomingMessage.handleStreamEnd (/Users/dev/shop-api/node_modules/axios/lib/adapters/http.js:572:11)
+@shop/web:test:       at IncomingMessage.emit (node:events:531:35)
+@shop/web:test:       at endReadableNT (node:internal/streams/readable:1696:12)
+@shop/web:test:       at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+@shop/web:test:       at Axios.request (/Users/dev/shop-api/node_modules/axios/lib/core/Axios.js:45:41)
+@shop/web:test:       at async fetchOrders (/Users/dev/shop-api/src/orders.ts:14:20)
+@shop/web:test: 
+@shop/web:test:  FAIL  src/signup.test.ts
+@shop/web:test:   ● signup › rejects a duplicate email
+@shop/web:test: 
+@shop/web:test:     PrismaClientKnownRequestError: 
+@shop/web:test:     Invalid `prisma.user.create()` invocation in
+@shop/web:test:     /home/app/src/routes/signup.ts:27:36
+@shop/web:test: 
+@shop/web:test:       24 const hashed = await bcrypt.hash(password, 10)
+@shop/web:test:     → 27 const user = await prisma.user.create(
+@shop/web:test:     Unique constraint failed on the fields: (`email`)
+@shop/web:test:       at In.handleRequestError (/home/app/node_modules/@prisma/client/runtime/library.js:121:7753)
+@shop/web:test:       at In.handleAndLogRequestError (/home/app/node_modules/@prisma/client/runtime/library.js:121:7061)
+@shop/web:test:       at In.request (/home/app/node_modules/@prisma/client/runtime/library.js:121:6745)
+@shop/web:test:       at async l (/home/app/node_modules/@prisma/client/runtime/library.js:130:9633)
+@shop/web:test:       at async signup (/home/app/src/routes/signup.ts:27:18) {
+@shop/web:test:         code: 'P2002',
+@shop/web:test:         clientVersion: '5.7.1',
+@shop/web:test:         meta: { modelName: 'User', target: [ 'email' ] }
+@shop/web:test:       }
+@shop/web:test: 
+@shop/web:test:   ● totals › adds tax
+@shop/web:test: 
+@shop/web:test:     expect(received).toBe(expected) // Object.is equality
+@shop/web:test: 
+@shop/web:test:     Expected: 108
+@shop/web:test:     Received: 107.99999999999999
+@shop/web:test: 
+@shop/web:test:       at Object.<anonymous> (src/totals.test.ts:9:31)
+@shop/web:test: 
+@shop/web:test: Test Suites: 3 failed, 2 passed, 5 total
+@shop/web:test: Tests:       4 failed, 11 passed, 15 total
+@shop/web:test: Snapshots:   0 total
+@shop/web:test: Time:        3.412 s
+@shop/web:test: Ran all test suites.
+@shop/web:test: npm error Lifecycle script `test` failed with error:
+@shop/web:test: npm error code 1
+@shop/web:test: ERROR: command finished with error: command (/repo/apps/web) /usr/local/bin/npm run test exited (1)
+
+  Tasks:    0 successful, 2 total
+  Cached:    0 cached, 2 total
+    Time:    4.211s
+Failed:    @shop/api#test, @shop/web#test
+
+ ERROR  run failed: command  exited (1)

@@ -214,13 +214,13 @@ export function formatLogVerdicts(log: LogRunResult, cwd: string, limit: number)
   const n = log.errors.length;
   const out = ['', pc.bold(`${n} different errors in this log`)];
   log.errors.forEach((e, i) => {
-    const where = `line ${e.lines.join(', ')}${e.lines.length > 1 ? `, ${e.lines.length}×` : ''}`;
+    const where = `${e.source ? `${e.source} · ` : ''}line ${e.lines.join(', ')}${e.lines.length > 1 ? `, ${e.lines.length}×` : ''}`;
     out.push('', `${pc.bold(`Error ${i + 1}/${n}`)} ${pc.dim(`(${where})`)}`);
     out.push(e.verdicts.length ? formatVerdicts(e, cwd, limit) : pc.dim('  No npm package in this error could be matched to a GitHub repo.'));
   });
   if (log.skipped.length) {
     out.push('', pc.dim('Not checked:'));
-    for (const s of log.skipped) out.push(pc.dim(`  line ${s.line}: "${displayMessage(s.query)}" — ${SKIP_REASONS[s.reason]}`));
+    for (const s of log.skipped) out.push(pc.dim(`  ${s.source ? `${s.source} · ` : ''}line ${s.line}: "${displayMessage(s.query)}" — ${SKIP_REASONS[s.reason]}`));
   }
   return out.join('\n');
 }

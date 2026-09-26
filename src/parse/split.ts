@@ -16,6 +16,8 @@ import { ANSI, FRAME, KNOWN_MESSAGE } from './index.js';
 
 export interface ErrorBlock {
   text: string;
+  /** Has an error line or a stack frame; otherwise it's just log output. */
+  failure: boolean;
   /** 1-based input line of the block's error (or of its start, when it has no error line). */
   line: number;
 }
@@ -37,7 +39,7 @@ export function isErrorStart(line: string): boolean {
 
 export function splitErrors(input: string): ErrorBlock[] {
   const lines = input.replace(ANSI, '').replace(/\r\n?/g, '\n').split('\n');
-  const blocks: Array<{ start: number; end: number; errorAt: number | undefined }> = [];
+  const blocks: Array<{ start: number; end: number; errorAt: number | undefined; failure: boolean }> = [];
   let start = 0;
   // What the current block holds so far: a header or prelude alone doesn't end it.
   let errorAt: number | undefined;
@@ -47,7 +49,7 @@ export function splitErrors(input: string): ErrorBlock[] {
     const header = RUNNER_HEADER.test(line);
     const error = !header && isErrorStart(line);
     if ((header || error) && (errorAt !== undefined || hasFrame)) {
-      blocks.push({ start, end: i, errorAt });
+      blocks.push({ start, end: i, errorAt, failure: true });
       start = i;
       errorAt = undefined;
       hasFrame = false;
@@ -55,9 +57,9 @@ export function splitErrors(input: string): ErrorBlock[] {
     if (error) errorAt ??= i;
     else if (FRAME.test(line)) hasFrame = true;
   });
-  blocks.push({ start, end: lines.length, errorAt });
+  blocks.push({ start, end: lines.length, errorAt, failure: errorAt !== undefined || hasFrame });
 
   return blocks
-    .map(({ start: s, end, errorAt: e }) => ({ text: lines.slice(s, end).join('\n').trim(), line: (e ?? s) + 1 }))
+    .map(({ start: s, end, errorAt: e, failure }) => ({ text: lines.slice(s, end).join('\n').trim(), line: (e ?? s) + 1, failure }))
     .filter((b) => b.text);
 }

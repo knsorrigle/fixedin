@@ -118,13 +118,13 @@ export function formatLogMarkdown(log: LogRunResult, version: string): string {
       ? `### 🔍 fixedin: ${fixed} of ${n} errors in this log ${fixed === 1 ? 'was' : 'were'} already fixed upstream`
       : `### 🔍 fixedin: no released fix you are missing (${n} errors checked)`;
   const sections = log.errors.map((e, i) => {
-    const where = `line ${e.lines.join(', ')}${e.lines.length > 1 ? ` (${e.lines.length}×)` : ''}`;
+    const where = `${e.source ? `\`${e.source.replace(/`/g, '')}\` · ` : ''}line ${e.lines.join(', ')}${e.lines.length > 1 ? ` (${e.lines.length}×)` : ''}`;
     return [`#### Error ${i + 1} of ${n} · ${where}`, '', e.verdicts.length ? verdicts(e).replace(/^####/gm, '#####') : NO_TARGET].join('\n');
   });
   const out = [COMMENT_MARKER, title, '', sections.join('\n\n---\n\n')];
   if (log.skipped.length) {
     out.push('', `<details><summary>Not checked: ${log.skipped.length} other error${log.skipped.length === 1 ? '' : 's'}</summary>`, '');
-    for (const s of log.skipped) out.push(`- line ${s.line}: ${inline(s.query, 120)} — ${SKIP_REASONS[s.reason]}`);
+    for (const s of log.skipped) out.push(`- ${s.source ? `\`${s.source.replace(/`/g, '')}\` · ` : ''}line ${s.line}: ${inline(s.query, 120)} — ${SKIP_REASONS[s.reason]}`);
     out.push('', '</details>');
   }
   out.push('', footer(version));

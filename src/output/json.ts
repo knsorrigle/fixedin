@@ -201,6 +201,8 @@ const Diagnostic = z
 const ErrorReport = z.object({
   /** 1-based input lines where this error occurred (repeats are merged). */
   lines: z.array(z.number().int()),
+  /** Monorepo task(s) or service(s) whose output it came from ("@shop/web:test", "api-1"); null when lines weren't labelled. */
+  source: z.string().nullable(),
   input: Input,
   packages: Packages,
   /** One per searched repo. */
@@ -223,7 +225,11 @@ export const ReportSchema = z.object({
   /** Each distinct error in the input, in order. A single error is errors[0]. */
   errors: z.array(ErrorReport),
   /** Distinct errors found but not checked (see SkipReason in pipeline.ts). */
-  skipped: z.array(z.object({ line: z.number().int(), query: z.string(), reason: z.enum(['not-an-error', 'no-package', 'limit']) })),
+  skipped: z.array(
+    z.object({ line: z.number().int(), query: z.string(), reason: z.enum(['not-an-error', 'no-package', 'limit']), source: z.string().nullable() }),
+  ),
+  /** Line labels that were stripped before parsing: turbo, pnpm (recursive run), compose, concurrently; null if none. */
+  prefixes: z.enum(['turbo', 'pnpm', 'compose', 'concurrently']).nullable(),
 });
 
 export type FixedinReport = z.infer<typeof ReportSchema>;
@@ -338,7 +344,7 @@ export function toReport(r: RunResult, version: string): FixedinReport {
 
 /** Convert a whole log's results into the stable report, validated by the schema. */
 export function toLogReport(log: LogRunResult, version: string): FixedinReport {
-  const errors = log.errors.map((e) => ({ lines: e.lines, ...errorReport(e) }));
+  const errors = log.errors.map((e) => ({ lines: e.lines, source: e.source ?? null, ...errorReport(e) }));
   const first = log.errors[0]!;
   const report = {
     schemaVersion: SCHEMA_VERSION,
@@ -350,7 +356,8 @@ export function toLogReport(log: LogRunResult, version: string): FixedinReport {
     results: errors[0]!.results,
     diagnostics: logDiagnostics(log).map(diagnostic),
     errors,
-    skipped: log.skipped,
+    skipped: log.skipped.map((x) => ({ ...x, source: x.source ?? null })),
+    prefixes: log.prefixes ?? null,
   };
   // Throws if the implementation drifts from the published contract.
   return ReportSchema.parse(report);

@@ -102,6 +102,12 @@
               "maximum": 9007199254740991
             }
           },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "input": {
             "$ref": "#/$defs/Input"
           },
@@ -123,6 +129,7 @@
         },
         "required": [
           "lines",
+          "source",
           "input",
           "packages",
           "results",
@@ -151,15 +158,38 @@
               "no-package",
               "limit"
             ]
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
           "line",
           "query",
-          "reason"
+          "reason",
+          "source"
         ],
         "additionalProperties": false
       }
+    },
+    "prefixes": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "turbo",
+            "pnpm",
+            "compose",
+            "concurrently"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "required": [
@@ -172,7 +202,8 @@
     "results",
     "diagnostics",
     "errors",
-    "skipped"
+    "skipped",
+    "prefixes"
   ],
   "additionalProperties": false,
   "$defs": {

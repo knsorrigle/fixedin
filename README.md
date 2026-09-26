@@ -160,6 +160,17 @@ Not checked:
 - Failures with no error line (test assertions) and errors with no npm package in their stack aren't searched, but they're listed under *Not checked*, as are errors past `--max-errors`.
 - Input with a single error is handled exactly as before.
 
+**Monorepo logs.** Tools that run tasks in parallel label every line and interleave their output, which would otherwise mix one package's stack trace into another's. When most lines carry one of these labels, fixedin strips it, untangles the output per label, and says which task each error came from (`Error 2/4 (@shop/web:test · line 19)`):
+
+| Tool | Line label |
+|---|---|
+| Turborepo | `@shop/web:test: …` |
+| `pnpm -r` / `pnpm --recursive` | `apps/web test: …` |
+| Docker Compose | `api-1  \| …` |
+| concurrently | `[api] …` / `[0] …` |
+
+GitHub Actions' raw-log timestamps (`2024-05-01T12:00:00.1234567Z …`) are removed first, so a downloaded job log works too.
+
 Each error costs a few searches, and hybrid search allows 10 per minute, so a log with many errors may pause for the rate limit (fixedin says so on stderr).
 
 ## Verdicts
@@ -256,7 +267,7 @@ for (const e of report.errors) {
 }
 ```
 
-`errors` has one entry per distinct error in the input: its `lines`, `input`, `packages`, `results` and `diagnostics`. The top-level `input`, `packages` and `results` are the first error's (so single-error consumers keep working), `diagnostics` covers all of them, and `skipped` lists errors that weren't checked.
+`errors` has one entry per distinct error in the input: its `lines`, `source` (the monorepo task it came from, or `null`), `input`, `packages`, `results` and `diagnostics`; `prefixes` names the line-label style that was stripped. The top-level `input`, `packages` and `results` are the first error's (so single-error consumers keep working), `diagnostics` covers all of them, and `skipped` lists errors that weren't checked.
 
 Every optional field is present as `null` rather than omitted. Additive changes keep `schemaVersion: 1`; breaking changes bump it.
 
