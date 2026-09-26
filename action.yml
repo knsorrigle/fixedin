@@ -1,5 +1,5 @@
 name: fixedin
-description: 'Is this test failure already fixed upstream? Reports the matching issue, the fixing release, and whether your installed version has it.'
+description: 'Is this test failure already fixed upstream? Finds the issue, the release with the fix, and whether you have it.'
 author: knsorrigle
 branding:
   icon: search

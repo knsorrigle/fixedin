@@ -2,6 +2,10 @@
 
 All notable changes to fixedin. Versions follow [semver](https://semver.org); the `--json` report has its own `schemaVersion`.
 
+## 1.0.1 — 2026-09-27
+
+- Shorten the GitHub Action's description to fit the Marketplace's 125-character limit, so it can be listed there. No change to the CLI.
+
 ## 1.0.0 — 2026-09-27
 
 First stable release: from here on the command-line flags, exit codes and the `--json` report (`schemaVersion: 1`) change incompatibly only in a new major version.
