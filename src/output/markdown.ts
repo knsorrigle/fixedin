@@ -7,7 +7,7 @@
  * @-mentions (they would ping people), no raw HTML, no markdown that could
  * break out of its place, and no links other than the ones fixedin builds.
  */
-import type { RunResult } from '../pipeline.js';
+import { SKIP_REASONS, type LogRunResult, type RunResult } from '../pipeline.js';
 import type { Verdict } from '../verdict/index.js';
 
 /** Marks fixedin's own PR comment, so the Action updates it instead of adding another. */
@@ -90,6 +90,13 @@ function verdictBlock(v: Verdict, query: string): string {
   return out.join('\n');
 }
 
+const NO_TARGET = '_No npm package in the error could be matched to a GitHub repo._';
+
+const footer = (version: string) =>
+  `<sub>${link(`fixedin ${version.replace(/[^\w.-]/g, '')}`, 'https://github.com/knsorrigle/fixedin')} · matched against public GitHub issues; check the linked issue before acting.</sub>`;
+
+const verdicts = (r: RunResult) => r.verdicts.map((v) => verdictBlock(v, r.detect.parsed.query)).join('\n\n---\n\n');
+
 export function formatMarkdown(r: RunResult, version: string): string {
   const fixes = r.verdicts.filter((v) => v.kind === 'FIXED_UPSTREAM_UPGRADE').length;
   const title =
@@ -98,9 +105,28 @@ export function formatMarkdown(r: RunResult, version: string): string {
       : r.verdicts.length
         ? '### 🔍 fixedin: no released fix you are missing'
         : '### 🔍 fixedin: nothing to check';
-  const body = r.verdicts.length
-    ? r.verdicts.map((v) => verdictBlock(v, r.detect.parsed.query)).join('\n\n---\n\n')
-    : '_No npm package in the error could be matched to a GitHub repo._';
-  const footer = `<sub>${link(`fixedin ${version.replace(/[^\w.-]/g, '')}`, 'https://github.com/knsorrigle/fixedin')} · matched against public GitHub issues; check the linked issue before acting.</sub>`;
-  return [COMMENT_MARKER, title, '', body, '', footer].join('\n');
+  return [COMMENT_MARKER, title, '', r.verdicts.length ? verdicts(r) : NO_TARGET, '', footer(version)].join('\n');
+}
+
+/** A whole log: one section per distinct error. A single error looks exactly like formatMarkdown. */
+export function formatLogMarkdown(log: LogRunResult, version: string): string {
+  if (log.errors.length === 1 && !log.skipped.length) return formatMarkdown(log.errors[0]!, version);
+  const n = log.errors.length;
+  const fixed = log.errors.filter((e) => e.verdicts.some((v) => v.kind === 'FIXED_UPSTREAM_UPGRADE')).length;
+  const title =
+    fixed > 0
+      ? `### 🔍 fixedin: ${fixed} of ${n} errors in this log ${fixed === 1 ? 'was' : 'were'} already fixed upstream`
+      : `### 🔍 fixedin: no released fix you are missing (${n} errors checked)`;
+  const sections = log.errors.map((e, i) => {
+    const where = `line ${e.lines.join(', ')}${e.lines.length > 1 ? ` (${e.lines.length}×)` : ''}`;
+    return [`#### Error ${i + 1} of ${n} · ${where}`, '', e.verdicts.length ? verdicts(e).replace(/^####/gm, '#####') : NO_TARGET].join('\n');
+  });
+  const out = [COMMENT_MARKER, title, '', sections.join('\n\n---\n\n')];
+  if (log.skipped.length) {
+    out.push('', `<details><summary>Not checked: ${log.skipped.length} other error${log.skipped.length === 1 ? '' : 's'}</summary>`, '');
+    for (const s of log.skipped) out.push(`- line ${s.line}: ${inline(s.query, 120)} — ${SKIP_REASONS[s.reason]}`);
+    out.push('', '</details>');
+  }
+  out.push('', footer(version));
+  return out.join('\n');
 }

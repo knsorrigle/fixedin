@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import type { Dependent, InstalledPackage } from '../lockfile/index.js';
 import type { Relation } from '../relation.js';
-import type { RunResult } from '../pipeline.js';
+import { logDiagnostics, type LogRunResult, type RunResult } from '../pipeline.js';
 
 export const SCHEMA_VERSION = 1;
 
@@ -167,38 +167,63 @@ const Result = z.object({
   }),
   /** Top matches after local re-ranking (length ≤ --limit). */
   matches: z.array(Match),
+}).meta({ id: 'Result' });
+
+const Input = z
+  .object({
+    messageLine: z.string(),
+    query: z.string(),
+    errorCodes: z.array(z.string()),
+  })
+  .meta({ id: 'Input' });
+// Each id becomes a $defs entry in docs/report.schema.json, so what the top level
+// and errors[] share is defined once there.
+const Packages = z.array(
+  z.object({
+    name: z.string(),
+    hits: z.number().int(),
+    source: z.enum(['stack-frame', 'vite-deps', 'deno-npm-cache', 'module-not-found']),
+    lowSignal: z.boolean(),
+    installed: Installed.nullable(),
+    repo: Repo.nullable(),
+  }),
+).meta({ id: 'Packages' });
+const Diagnostic = z
+  .object({
+    level: z.enum(['info', 'warn', 'error']),
+    stage: z.string(),
+    message: z.string(),
+    tried: z.array(z.string()),
+  })
+  .meta({ id: 'Diagnostic' });
+
+/** One distinct error from the input. */
+const ErrorReport = z.object({
+  /** 1-based input lines where this error occurred (repeats are merged). */
+  lines: z.array(z.number().int()),
+  input: Input,
+  packages: Packages,
+  /** One per searched repo. */
+  results: z.array(Result),
+  diagnostics: z.array(Diagnostic),
 });
 
 export const ReportSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   tool: z.object({ name: z.literal('fixedin'), version: z.string() }),
-  input: z.object({
-    messageLine: z.string(),
-    query: z.string(),
-    errorCodes: z.array(z.string()),
-  }),
+  /** input, packages and results describe the first error; `errors` has every one. */
+  input: Input,
   lockfile: z.object({ kind: z.enum(['package-lock', 'pnpm', 'yarn', 'bun', 'deno']), path: z.string() }).nullable(),
   auth: z.object({ source: z.enum(['GITHUB_TOKEN', 'GH_TOKEN', 'gh auth token', 'none']) }),
-  packages: z.array(
-    z.object({
-      name: z.string(),
-      hits: z.number().int(),
-      source: z.enum(['stack-frame', 'vite-deps', 'deno-npm-cache', 'module-not-found']),
-      lowSignal: z.boolean(),
-      installed: Installed.nullable(),
-      repo: Repo.nullable(),
-    }),
-  ),
+  packages: Packages,
   /** One per searched repo. */
   results: z.array(Result),
-  diagnostics: z.array(
-    z.object({
-      level: z.enum(['info', 'warn', 'error']),
-      stage: z.string(),
-      message: z.string(),
-      tried: z.array(z.string()),
-    }),
-  ),
+  /** Every error's diagnostics, repeats removed. */
+  diagnostics: z.array(Diagnostic),
+  /** Each distinct error in the input, in order. A single error is errors[0]. */
+  errors: z.array(ErrorReport),
+  /** Distinct errors found but not checked (see SkipReason in pipeline.ts). */
+  skipped: z.array(z.object({ line: z.number().int(), query: z.string(), reason: z.enum(['not-an-error', 'no-package', 'limit']) })),
 });
 
 export type FixedinReport = z.infer<typeof ReportSchema>;
@@ -227,14 +252,72 @@ const match = (m: RunResult['searches'][number]['matches'][number]) => ({
   similarity: { ...m.similarity, anchor: m.similarity.anchor ?? null, frames: m.similarity.frames ?? null },
 });
 
-/** Convert an internal RunResult into the stable report, validated by the schema. */
-export function toReport(r: RunResult, version: string): FixedinReport {
-  const report = {
-    schemaVersion: SCHEMA_VERSION,
-    tool: { name: 'fixedin' as const, version },
+const diagnostic = (d: RunResult['detect']['diagnostics']['items'][number]) => ({ level: d.level, stage: d.stage, message: d.message, tried: d.tried ?? [] });
+
+const results = (r: RunResult) =>
+  r.verdicts.map((v, i) => {
+    const s = r.searches[i]!;
+    return {
+      repo: repo(v.repo),
+      package: v.packageName ?? null,
+      installed: installed(v.installed),
+      dependency: v.relation ? dependency(v.relation) : null,
+      verdict: {
+        kind: v.kind,
+        advice: v.advice,
+        reasons: v.reasons,
+        match: v.match ? match(v.match) : null,
+        fix: v.fix
+          ? {
+              kind: v.fix.kind,
+              number: v.fix.number ?? null,
+              title: v.fix.title ?? null,
+              url: v.fix.url,
+              sha: v.fix.sha,
+              mergedAt: v.fix.mergedAt ?? null,
+              baseRef: v.fix.baseRef ?? null,
+              evidence: v.fix.evidence,
+            }
+          : null,
+        fixedIn: v.fixedIn ?? null,
+        latest: v.latest ?? null,
+        installedHasFix: v.installedHasFix ?? null,
+        workaround: v.workaround ?? null,
+        remedy: v.remedy
+          ? {
+              kind: v.remedy.kind,
+              parent: v.remedy.parent,
+              command: v.remedy.command ?? null,
+              note: v.remedy.note ?? null,
+              upgradeParentTo: v.remedy.upgradeParentTo ?? null,
+              override: v.remedy.override ?? null,
+              summary: v.remedy.summary,
+            }
+          : null,
+        releaseNote: v.releaseNote ?? null,
+        majorUpgrade: v.majorUpgrade ?? null,
+      },
+      search: {
+        mode: s.modeUsed,
+        totalCount: s.totalCount,
+        attempts: s.attempts.map((a) => ({
+          requested: a.requested,
+          q: a.q,
+          used: a.used ?? null,
+          fallbackReasons: a.fallbackReasons ?? [],
+          totalCount: a.totalCount ?? null,
+          error: a.error ?? null,
+          skipped: a.skipped ?? null,
+          purpose: a.purpose ?? 'message',
+        })),
+      },
+      matches: s.matches.map(match),
+    };
+  });
+
+function errorReport(r: RunResult) {
+  return {
     input: { messageLine: r.detect.parsed.messageLine, query: r.detect.parsed.query, errorCodes: r.detect.parsed.errorCodes },
-    lockfile: r.detect.lockfile ? { kind: r.detect.lockfile.kind, path: r.detect.lockfile.file } : null,
-    auth: { source: r.auth.source },
     packages: r.detect.packages.map((p) => ({
       name: p.candidate.name,
       hits: p.candidate.hits,
@@ -243,66 +326,31 @@ export function toReport(r: RunResult, version: string): FixedinReport {
       installed: installed(p.installed),
       repo: p.repo ? repo(p.repo) : null,
     })),
-    results: r.verdicts.map((v, i) => {
-      const s = r.searches[i]!;
-      return {
-        repo: repo(v.repo),
-        package: v.packageName ?? null,
-        installed: installed(v.installed),
-        dependency: v.relation ? dependency(v.relation) : null,
-        verdict: {
-          kind: v.kind,
-          advice: v.advice,
-          reasons: v.reasons,
-          match: v.match ? match(v.match) : null,
-          fix: v.fix
-            ? {
-                kind: v.fix.kind,
-                number: v.fix.number ?? null,
-                title: v.fix.title ?? null,
-                url: v.fix.url,
-                sha: v.fix.sha,
-                mergedAt: v.fix.mergedAt ?? null,
-                baseRef: v.fix.baseRef ?? null,
-                evidence: v.fix.evidence,
-              }
-            : null,
-          fixedIn: v.fixedIn ?? null,
-          latest: v.latest ?? null,
-          installedHasFix: v.installedHasFix ?? null,
-          workaround: v.workaround ?? null,
-          remedy: v.remedy
-            ? {
-                kind: v.remedy.kind,
-                parent: v.remedy.parent,
-                command: v.remedy.command ?? null,
-                note: v.remedy.note ?? null,
-                upgradeParentTo: v.remedy.upgradeParentTo ?? null,
-                override: v.remedy.override ?? null,
-                summary: v.remedy.summary,
-              }
-            : null,
-          releaseNote: v.releaseNote ?? null,
-          majorUpgrade: v.majorUpgrade ?? null,
-        },
-        search: {
-          mode: s.modeUsed,
-          totalCount: s.totalCount,
-          attempts: s.attempts.map((a) => ({
-            requested: a.requested,
-            q: a.q,
-            used: a.used ?? null,
-            fallbackReasons: a.fallbackReasons ?? [],
-            totalCount: a.totalCount ?? null,
-            error: a.error ?? null,
-            skipped: a.skipped ?? null,
-            purpose: a.purpose ?? 'message',
-          })),
-        },
-        matches: s.matches.map(match),
-      };
-    }),
-    diagnostics: r.detect.diagnostics.items.map((d) => ({ level: d.level, stage: d.stage, message: d.message, tried: d.tried ?? [] })),
+    results: results(r),
+    diagnostics: r.detect.diagnostics.items.map(diagnostic),
+  };
+}
+
+/** Convert an internal RunResult (one error) into the stable report, validated by the schema. */
+export function toReport(r: RunResult, version: string): FixedinReport {
+  return toLogReport({ errors: [{ ...r, lines: [1] }], skipped: [], auth: r.auth }, version);
+}
+
+/** Convert a whole log's results into the stable report, validated by the schema. */
+export function toLogReport(log: LogRunResult, version: string): FixedinReport {
+  const errors = log.errors.map((e) => ({ lines: e.lines, ...errorReport(e) }));
+  const first = log.errors[0]!;
+  const report = {
+    schemaVersion: SCHEMA_VERSION,
+    tool: { name: 'fixedin' as const, version },
+    input: errors[0]!.input,
+    lockfile: first.detect.lockfile ? { kind: first.detect.lockfile.kind, path: first.detect.lockfile.file } : null,
+    auth: { source: log.auth.source },
+    packages: errors[0]!.packages,
+    results: errors[0]!.results,
+    diagnostics: logDiagnostics(log).map(diagnostic),
+    errors,
+    skipped: log.skipped,
   };
   // Throws if the implementation drifts from the published contract.
   return ReportSchema.parse(report);

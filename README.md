@@ -48,13 +48,15 @@ fixedin "Error [ERR_REQUIRE_ESM]: require() of ES Module not supported"
 
 # A whole stack trace on stdin (best: package names come from node_modules/ paths)
 pbpaste | fixedin
+
+# A whole test or CI log: each distinct error is checked on its own
 npm test 2>&1 | fixedin
 
 # Error thrown from your own code (no node_modules frames)? Name the repo.
 pbpaste | fixedin --repo axios/axios
 
 # Machine-readable
-pbpaste | fixedin --json | jq '.results[].verdict.kind'
+npm test 2>&1 | fixedin --json | jq '.errors[].results[].verdict.kind'
 ```
 
 | Flag | Default | |
@@ -62,6 +64,7 @@ pbpaste | fixedin --json | jq '.results[].verdict.kind'
 | `--cwd <dir>` | current dir | Project whose lockfile to read (searches upward, so monorepo packages work; in pnpm, yarn, Bun and Deno workspaces it also picks which package's dependencies count) |
 | `--repo <owner/name>` | detected | Search this repo instead of the ones found in the stack trace |
 | `--limit <n>` | `5` | Matches to show per repo |
+| `--max-errors <n>` | `5` | Distinct errors to check in a log that has several ([how logs are split](#logs-with-several-errors)) |
 | `--json` | | Stable JSON output (see [schema](#json-output)) |
 | `-v, --verbose` | | Every search query, trace step, release probe, cache hit and remaining API quota |
 | `--no-cache` | | Don't read or write `~/.cache/fixedin` |
@@ -111,7 +114,7 @@ Outputs: `fix-available` (`"true"`/`"false"`), `exit-code` (as for `--exit-code`
 
 ## Use in CI
 
-With `--exit-code`, fixedin's answer is usable in scripts: **1** means "this failure is already fixed upstream — upgrade", **0** means nothing to upgrade to (no match, you already have the fix, the issue is open, or the fix isn't released), **2** means fixedin couldn't tell. A found fix wins: if one repo's search fails but another finds a fix, the exit code is 1.
+With `--exit-code`, fixedin's answer is usable in scripts: **1** means "this failure is already fixed upstream — upgrade", **0** means nothing to upgrade to (no match, you already have the fix, the issue is open, or the fix isn't released), **2** means fixedin couldn't tell. A found fix wins: if one repo's search fails but another finds a fix, the exit code is 1. For a log with several errors, the same rules apply across all of them.
 
 For example, in GitHub Actions — explain a failed test run and flag failures that an upgrade would fix:
 
@@ -130,6 +133,34 @@ For example, in GitHub Actions — explain a failed test run and flag failures t
     npx fixedin --exit-code < test.log || status=$?
     if [ "$status" = 1 ]; then echo "::warning::A released upstream fix exists for this failure — see the fixedin output above."; fi
 ```
+
+## Logs with several errors
+
+A failing test run rarely fails once. fixedin splits its input into one error per stack trace, then checks each on its own, so one error's message is never searched with another error's packages:
+
+```
+$ npm test 2>&1 | fixedin
+3 different errors in this log
+
+Error 1/3 (line 4)
+  ? nanoid: "Cannot use import statement outside a module" (closed, no fix traced)
+  …
+Error 2/3 (line 19, 31, 2×)
+  ? axios: "Cannot read properties of undefined (reading 'headers')" (closed, no fix traced)
+  …
+Error 3/3 (line 44)
+  ● @prisma/client: "Unique constraint failed on the fields: (`email`)" (open issue)
+  …
+Not checked:
+  line 61: "expect(received).toBe(expected) Object.is equality" — no error message (a test assertion?)
+```
+
+- An error starts at an error line (`TypeError: …`, `Error [ERR_X]: …`, `Cannot find module …`) or at a test runner's per-failure header (jest's `●`, `FAIL`, vitest's `⎯⎯⎯` rules, webpack's `ERROR in`). Cause chains (`Caused by:`, `[cause]:`) stay with their error.
+- The same error repeated (same message, same package) is checked once, with every line it appeared on.
+- Failures with no error line (test assertions) and errors with no npm package in their stack aren't searched, but they're listed under *Not checked*, as are errors past `--max-errors`.
+- Input with a single error is handled exactly as before.
+
+Each error costs a few searches, and hybrid search allows 10 per minute, so a log with many errors may pause for the rate limit (fixedin says so on stderr).
 
 ## Verdicts
 
@@ -220,8 +251,12 @@ GitHub's hybrid search allows **10 requests per minute**. fixedin reads the `x-r
 import { ReportSchema, type FixedinReport } from 'fixedin';
 
 const report: FixedinReport = ReportSchema.parse(JSON.parse(stdout));
-for (const r of report.results) console.log(r.package, r.verdict.kind, r.verdict.fixedIn);
+for (const e of report.errors) {
+  for (const r of e.results) console.log(`line ${e.lines[0]}`, r.package, r.verdict.kind, r.verdict.fixedIn);
+}
 ```
+
+`errors` has one entry per distinct error in the input: its `lines`, `input`, `packages`, `results` and `diagnostics`. The top-level `input`, `packages` and `results` are the first error's (so single-error consumers keep working), `diagnostics` covers all of them, and `skipped` lists errors that weren't checked.
 
 Every optional field is present as `null` rather than omitted. Additive changes keep `schemaVersion: 1`; breaking changes bump it.
 

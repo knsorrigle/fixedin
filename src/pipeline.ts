@@ -15,7 +15,9 @@ import { ResolveError, resolveRepo, type RepoRef } from './resolve/index.js';
 import { canonicalizeRepo, searchRepo, type IssueMatch, type RepoSearchResult } from './search/index.js';
 import { traceFix, type TraceResult } from './trace/index.js';
 import { crossesMajor, decideFixed, MATCH_THRESHOLD, pickWorkaround, type IssueComment, type Verdict } from './verdict/index.js';
-import type { Diagnostics } from './diagnostics.js';
+import type { Diagnostic, Diagnostics } from './diagnostics.js';
+import { parseError } from './parse/index.js';
+import { isErrorStart, splitErrors, type ErrorBlock } from './parse/split.js';
 import type { GitHub } from './github/client.js';
 
 export interface RunOptions {
@@ -68,6 +70,89 @@ export function chooseTargets(d: DetectResult, maxRepos: number): SearchTarget[]
     }
   }
   return [...byRepo.values()].slice(0, maxRepos);
+}
+
+export interface LogRunOptions extends RunOptions {
+  /** Max distinct errors to check (each costs several searches). */
+  maxErrors?: number;
+}
+
+/** One distinct error from the input, and every place it occurred. */
+export interface ErrorRun extends RunResult {
+  /** 1-based input lines where this error starts; length = how often it occurred. */
+  lines: number[];
+}
+
+export interface LogRunResult {
+  errors: ErrorRun[];
+  /** Distinct errors that weren't checked, and why. */
+  skipped: Array<{ line: number; query: string; reason: SkipReason }>;
+  auth: Pick<AuthResult, 'source'>;
+}
+
+export type SkipReason = 'not-an-error' | 'no-package' | 'limit';
+export const SKIP_REASONS: Record<SkipReason, string> = {
+  'not-an-error': 'no error message (a test assertion?)',
+  'no-package': 'no npm package in its stack trace', // the bug is likely in the app's own code
+  limit: 'over the --max-errors limit',
+};
+
+const DEFAULT_MAX_ERRORS = 5;
+
+/**
+ * A whole log: split it into errors (parse/split.ts), merge repeats of the same
+ * error, and run each distinct one that names a package. A log with a single
+ * such error runs exactly as `run()` would on the whole text.
+ */
+export async function runLog(input: string, opts: LogRunOptions): Promise<LogRunResult> {
+  const auth = opts.auth ?? (await resolveToken());
+  const one = async (): Promise<LogRunResult> => ({
+    errors: [{ ...(await run(input, { ...opts, auth })), lines: [1] }],
+    skipped: [],
+    auth: { source: auth.source },
+  });
+
+  const distinct = new Map<string, { block: ErrorBlock; query: string; lines: number[]; skip?: SkipReason }>();
+  for (const block of splitErrors(input)) {
+    const parsed = parseError(block.text);
+    if (!parsed.query) continue;
+    // Test runners' own frames (jest, vitest) are in nearly every failure; they don't make it an upstream bug.
+    const culprit = parsed.packages.find((p) => !p.lowSignal);
+    const key = `${parsed.query}\u0000${culprit?.name ?? ''}`;
+    const seen = distinct.get(key);
+    if (seen) seen.lines.push(block.line);
+    else {
+      const skip = !isErrorStart(parsed.messageLine) ? 'not-an-error' : !culprit && !opts.repo ? 'no-package' : undefined;
+      distinct.set(key, { block, query: parsed.query, lines: [block.line], ...(skip ? { skip } : {}) });
+    }
+  }
+  const all = [...distinct.values()];
+  const checkable = all.filter((e) => !e.skip);
+  if (checkable.length <= 1) return one();
+
+  const max = opts.maxErrors ?? DEFAULT_MAX_ERRORS;
+  const errors: ErrorRun[] = [];
+  // Sequential, like the repos within one error: search quotas are per minute.
+  for (const e of checkable.slice(0, max)) errors.push({ ...(await run(e.block.text, { ...opts, auth })), lines: e.lines });
+  return {
+    errors,
+    skipped: [
+      ...all.filter((e) => e.skip).map((e) => ({ line: e.lines[0]!, query: e.query, reason: e.skip! })),
+      ...checkable.slice(max).map((e) => ({ line: e.lines[0]!, query: e.query, reason: 'limit' as const })),
+    ].sort((a, b) => a.line - b.line),
+    auth: { source: auth.source },
+  };
+}
+
+/** Every error's diagnostics in order, each distinct message once. */
+export function logDiagnostics(log: LogRunResult): Diagnostic[] {
+  const seen = new Set<string>();
+  return log.errors
+    .flatMap((e) => e.detect.diagnostics.items)
+    .filter((d) => {
+      const key = `${d.level}\u0000${d.stage}\u0000${d.message}`;
+      return !seen.has(key) && Boolean(seen.add(key));
+    });
 }
 
 export async function run(input: string, opts: RunOptions): Promise<RunResult> {

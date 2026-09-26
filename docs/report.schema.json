@@ -24,27 +24,7 @@
       "additionalProperties": false
     },
     "input": {
-      "type": "object",
-      "properties": {
-        "messageLine": {
-          "type": "string"
-        },
-        "query": {
-          "type": "string"
-        },
-        "errorCodes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "required": [
-        "messageLine",
-        "query",
-        "errorCodes"
-      ],
-      "additionalProperties": false
+      "$ref": "#/$defs/Input"
     },
     "lockfile": {
       "anyOf": [
@@ -95,6 +75,131 @@
       "additionalProperties": false
     },
     "packages": {
+      "$ref": "#/$defs/Packages"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Result"
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Diagnostic"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "input": {
+            "$ref": "#/$defs/Input"
+          },
+          "packages": {
+            "$ref": "#/$defs/Packages"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Result"
+            }
+          },
+          "diagnostics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Diagnostic"
+            }
+          }
+        },
+        "required": [
+          "lines",
+          "input",
+          "packages",
+          "results",
+          "diagnostics"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "skipped": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "query": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "not-an-error",
+              "no-package",
+              "limit"
+            ]
+          }
+        },
+        "required": [
+          "line",
+          "query",
+          "reason"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "tool",
+    "input",
+    "lockfile",
+    "auth",
+    "packages",
+    "results",
+    "diagnostics",
+    "errors",
+    "skipped"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Input": {
+      "type": "object",
+      "properties": {
+        "messageLine": {
+          "type": "string"
+        },
+        "query": {
+          "type": "string"
+        },
+        "errorCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "messageLine",
+        "query",
+        "errorCodes"
+      ],
+      "additionalProperties": false
+    },
+    "Packages": {
       "type": "array",
       "items": {
         "type": "object",
@@ -214,776 +319,389 @@
         "additionalProperties": false
       }
     },
-    "results": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "repo": {
-            "type": "object",
-            "properties": {
-              "owner": {
-                "type": "string"
-              },
-              "repo": {
-                "type": "string"
-              },
-              "directory": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
+    "Result": {
+      "type": "object",
+      "properties": {
+        "repo": {
+          "type": "object",
+          "properties": {
+            "owner": {
+              "type": "string"
             },
-            "required": [
-              "owner",
-              "repo",
-              "directory"
-            ],
-            "additionalProperties": false
+            "repo": {
+              "type": "string"
+            },
+            "directory": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
           },
-          "package": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "installed": {
-            "anyOf": [
-              {
-                "type": "object",
-                "properties": {
-                  "version": {
-                    "type": "string"
-                  },
-                  "location": {
-                    "type": "string"
-                  },
-                  "source": {
-                    "type": "string"
-                  },
-                  "topLevel": {
-                    "type": "boolean"
-                  },
-                  "selectedBy": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          "frame-version",
-                          "frame-install-path"
-                        ]
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
-                  "topLevelVersion": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  }
-                },
-                "required": [
-                  "version",
-                  "location",
-                  "source",
-                  "topLevel",
-                  "selectedBy",
-                  "topLevelVersion"
-                ],
-                "additionalProperties": false
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "dependency": {
-            "anyOf": [
-              {
-                "type": "object",
-                "properties": {
-                  "kind": {
-                    "type": "string",
-                    "enum": [
-                      "direct",
-                      "transitive",
-                      "unknown"
-                    ]
-                  },
-                  "via": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "name": {
-                          "type": "string"
-                        },
-                        "version": {
-                          "type": "string"
-                        },
-                        "range": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "name",
-                        "version",
-                        "range"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "chain": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "name": {
-                          "type": "string"
-                        },
-                        "version": {
-                          "type": "string"
-                        },
-                        "range": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "name",
-                        "version",
-                        "range"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "reason": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  }
-                },
-                "required": [
-                  "kind",
-                  "via",
-                  "chain",
-                  "reason"
-                ],
-                "additionalProperties": false
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "verdict": {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "FIXED_UPSTREAM_UPGRADE",
-                  "ALREADY_HAVE_FIX",
-                  "FIX_UNRELEASED",
-                  "OPEN_ISSUE",
-                  "CLOSED_NO_FIX_FOUND",
-                  "NO_MATCH"
-                ]
-              },
-              "advice": {
-                "type": "string"
-              },
-              "reasons": {
-                "type": "array",
-                "items": {
+          "required": [
+            "owner",
+            "repo",
+            "directory"
+          ],
+          "additionalProperties": false
+        },
+        "package": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "installed": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "version": {
                   "type": "string"
-                }
-              },
-              "match": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "number": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "title": {
-                        "type": "string"
-                      },
-                      "url": {
-                        "type": "string",
-                        "format": "uri"
-                      },
-                      "state": {
-                        "type": "string",
-                        "enum": [
-                          "open",
-                          "closed"
-                        ]
-                      },
-                      "stateReason": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "createdAt": {
-                        "type": "string"
-                      },
-                      "closedAt": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "comments": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "reactions": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "labels": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "githubRank": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "similarity": {
-                        "type": "object",
-                        "properties": {
-                          "score": {
-                            "type": "number",
-                            "minimum": 0,
-                            "maximum": 1
-                          },
-                          "title": {
-                            "type": "number",
-                            "minimum": 0,
-                            "maximum": 1
-                          },
-                          "body": {
-                            "type": "number",
-                            "minimum": 0,
-                            "maximum": 1
-                          },
-                          "verbatim": {
-                            "type": "boolean"
-                          },
-                          "anchor": {
-                            "anyOf": [
-                              {
-                                "type": "object",
-                                "properties": {
-                                  "term": {
-                                    "type": "string"
-                                  },
-                                  "found": {
-                                    "type": "string",
-                                    "enum": [
-                                      "title",
-                                      "body",
-                                      "none"
-                                    ]
-                                  }
-                                },
-                                "required": [
-                                  "term",
-                                  "found"
-                                ],
-                                "additionalProperties": false
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ]
-                          },
-                          "frames": {
-                            "anyOf": [
-                              {
-                                "type": "object",
-                                "properties": {
-                                  "matched": {
-                                    "type": "integer",
-                                    "minimum": -9007199254740991,
-                                    "maximum": 9007199254740991
-                                  },
-                                  "of": {
-                                    "type": "integer",
-                                    "minimum": -9007199254740991,
-                                    "maximum": 9007199254740991
-                                  },
-                                  "top": {
-                                    "type": "boolean"
-                                  },
-                                  "otherTrace": {
-                                    "type": "boolean"
-                                  }
-                                },
-                                "required": [
-                                  "matched",
-                                  "of",
-                                  "top",
-                                  "otherTrace"
-                                ],
-                                "additionalProperties": false
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ]
-                          }
-                        },
-                        "required": [
-                          "score",
-                          "title",
-                          "body",
-                          "verbatim",
-                          "anchor",
-                          "frames"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "required": [
-                      "number",
-                      "title",
-                      "url",
-                      "state",
-                      "stateReason",
-                      "createdAt",
-                      "closedAt",
-                      "comments",
-                      "reactions",
-                      "labels",
-                      "githubRank",
-                      "similarity"
-                    ],
-                    "additionalProperties": false
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "fix": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "kind": {
-                        "type": "string",
-                        "enum": [
-                          "pull_request",
-                          "commit"
-                        ]
-                      },
-                      "number": {
-                        "anyOf": [
-                          {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      },
-                      "title": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "url": {
-                        "type": "string",
-                        "format": "uri"
-                      },
-                      "sha": {
-                        "type": "string"
-                      },
-                      "mergedAt": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "baseRef": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "evidence": {
-                        "type": "string",
-                        "enum": [
-                          "closed-by-pr",
-                          "closed-by-commit",
-                          "linked-pr",
-                          "referenced-pr-near-close"
-                        ]
-                      }
-                    },
-                    "required": [
-                      "kind",
-                      "number",
-                      "title",
-                      "url",
-                      "sha",
-                      "mergedAt",
-                      "baseRef",
-                      "evidence"
-                    ],
-                    "additionalProperties": false
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "fixedIn": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "latest": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "installedHasFix": {
-                "anyOf": [
-                  {
-                    "type": "string",
-                    "enum": [
-                      "contains",
-                      "missing",
-                      "unknown"
-                    ]
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "workaround": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "url": {
-                        "type": "string",
-                        "format": "uri"
-                      },
-                      "author": {
-                        "type": "string"
-                      },
-                      "reactions": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "hasCode": {
-                        "type": "boolean"
-                      },
-                      "excerpt": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "url",
-                      "author",
-                      "reactions",
-                      "hasCode",
-                      "excerpt"
-                    ],
-                    "additionalProperties": false
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "remedy": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "kind": {
-                        "type": "string",
-                        "enum": [
-                          "refresh",
-                          "upgrade-parent",
-                          "override"
-                        ]
-                      },
-                      "parent": {
-                        "type": "object",
-                        "properties": {
-                          "name": {
-                            "type": "string"
-                          },
-                          "version": {
-                            "type": "string"
-                          },
-                          "range": {
-                            "type": "string"
-                          }
-                        },
-                        "required": [
-                          "name",
-                          "version",
-                          "range"
-                        ],
-                        "additionalProperties": false
-                      },
-                      "command": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "note": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      },
-                      "upgradeParentTo": {
-                        "anyOf": [
-                          {
-                            "type": "object",
-                            "properties": {
-                              "version": {
-                                "type": "string"
-                              },
-                              "range": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
-                              },
-                              "majorBump": {
-                                "type": "boolean"
-                              }
-                            },
-                            "required": [
-                              "version",
-                              "range",
-                              "majorBump"
-                            ],
-                            "additionalProperties": false
-                          },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      },
-                      "override": {
-                        "anyOf": [
-                          {
-                            "type": "object",
-                            "properties": {
-                              "snippet": {
-                                "type": "string"
-                              },
-                              "note": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "snippet",
-                              "note"
-                            ],
-                            "additionalProperties": false
-                          },
-                          {
-                            "type": "null"
-                          }
-                        ]
-                      },
-                      "summary": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "kind",
-                      "parent",
-                      "command",
-                      "note",
-                      "upgradeParentTo",
-                      "override",
-                      "summary"
-                    ],
-                    "additionalProperties": false
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "releaseNote": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "source": {
-                        "type": "string",
-                        "enum": [
-                          "github-release",
-                          "changelog"
-                        ]
-                      },
-                      "url": {
-                        "type": "string",
-                        "format": "uri"
-                      },
-                      "lines": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "matchedBy": {
-                        "type": "string",
-                        "enum": [
-                          "pull-request",
-                          "issue",
-                          "commit"
-                        ]
-                      }
-                    },
-                    "required": [
-                      "source",
-                      "url",
-                      "lines",
-                      "matchedBy"
-                    ],
-                    "additionalProperties": false
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "majorUpgrade": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "from": {
-                        "type": "string"
-                      },
-                      "to": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "from",
-                      "to"
-                    ],
-                    "additionalProperties": false
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              }
-            },
-            "required": [
-              "kind",
-              "advice",
-              "reasons",
-              "match",
-              "fix",
-              "fixedIn",
-              "latest",
-              "installedHasFix",
-              "workaround",
-              "remedy",
-              "releaseNote",
-              "majorUpgrade"
-            ],
-            "additionalProperties": false
-          },
-          "search": {
-            "type": "object",
-            "properties": {
-              "mode": {
-                "type": "string",
-                "enum": [
-                  "hybrid",
-                  "semantic",
-                  "lexical",
-                  "none"
-                ]
-              },
-              "totalCount": {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              },
-              "attempts": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "requested": {
+                },
+                "location": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string"
+                },
+                "topLevel": {
+                  "type": "boolean"
+                },
+                "selectedBy": {
+                  "anyOf": [
+                    {
                       "type": "string",
                       "enum": [
-                        "hybrid",
-                        "semantic",
-                        "lexical"
+                        "frame-version",
+                        "frame-install-path"
                       ]
                     },
-                    "q": {
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "topLevelVersion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "version",
+                "location",
+                "source",
+                "topLevel",
+                "selectedBy",
+                "topLevelVersion"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dependency": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "direct",
+                    "transitive",
+                    "unknown"
+                  ]
+                },
+                "via": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "string"
+                      },
+                      "range": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "version",
+                      "range"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "chain": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "string"
+                      },
+                      "range": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "version",
+                      "range"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "via",
+                "chain",
+                "reason"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "verdict": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "FIXED_UPSTREAM_UPGRADE",
+                "ALREADY_HAVE_FIX",
+                "FIX_UNRELEASED",
+                "OPEN_ISSUE",
+                "CLOSED_NO_FIX_FOUND",
+                "NO_MATCH"
+              ]
+            },
+            "advice": {
+              "type": "string"
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "match": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "number": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "title": {
                       "type": "string"
                     },
-                    "used": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "enum": [
-                            "hybrid",
-                            "semantic",
-                            "lexical"
-                          ]
-                        },
-                        {
-                          "type": "null"
-                        }
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "state": {
+                      "type": "string",
+                      "enum": [
+                        "open",
+                        "closed"
                       ]
                     },
-                    "fallbackReasons": {
+                    "stateReason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "closedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "comments": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "reactions": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "labels": {
                       "type": "array",
                       "items": {
                         "type": "string"
                       }
                     },
-                    "totalCount": {
+                    "githubRank": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "similarity": {
+                      "type": "object",
+                      "properties": {
+                        "score": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "title": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "body": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "verbatim": {
+                          "type": "boolean"
+                        },
+                        "anchor": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "term": {
+                                  "type": "string"
+                                },
+                                "found": {
+                                  "type": "string",
+                                  "enum": [
+                                    "title",
+                                    "body",
+                                    "none"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "term",
+                                "found"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "frames": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "matched": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "of": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                },
+                                "top": {
+                                  "type": "boolean"
+                                },
+                                "otherTrace": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "matched",
+                                "of",
+                                "top",
+                                "otherTrace"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "score",
+                        "title",
+                        "body",
+                        "verbatim",
+                        "anchor",
+                        "frames"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "number",
+                    "title",
+                    "url",
+                    "state",
+                    "stateReason",
+                    "createdAt",
+                    "closedAt",
+                    "comments",
+                    "reactions",
+                    "labels",
+                    "githubRank",
+                    "similarity"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "fix": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "pull_request",
+                        "commit"
+                      ]
+                    },
+                    "number": {
                       "anyOf": [
                         {
                           "type": "integer",
@@ -995,278 +713,648 @@
                         }
                       ]
                     },
-                    "error": {
+                    "title": {
                       "type": [
                         "string",
                         "null"
                       ]
                     },
-                    "skipped": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "sha": {
+                      "type": "string"
+                    },
+                    "mergedAt": {
                       "type": [
                         "string",
                         "null"
                       ]
                     },
-                    "purpose": {
+                    "baseRef": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "evidence": {
                       "type": "string",
                       "enum": [
-                        "message",
-                        "frames"
+                        "closed-by-pr",
+                        "closed-by-commit",
+                        "linked-pr",
+                        "referenced-pr-near-close"
                       ]
                     }
                   },
                   "required": [
-                    "requested",
-                    "q",
-                    "used",
-                    "fallbackReasons",
-                    "totalCount",
-                    "error",
-                    "skipped",
-                    "purpose"
+                    "kind",
+                    "number",
+                    "title",
+                    "url",
+                    "sha",
+                    "mergedAt",
+                    "baseRef",
+                    "evidence"
                   ],
                   "additionalProperties": false
+                },
+                {
+                  "type": "null"
                 }
+              ]
+            },
+            "fixedIn": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "latest": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "installedHasFix": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "contains",
+                    "missing",
+                    "unknown"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "workaround": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "author": {
+                      "type": "string"
+                    },
+                    "reactions": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "hasCode": {
+                      "type": "boolean"
+                    },
+                    "excerpt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url",
+                    "author",
+                    "reactions",
+                    "hasCode",
+                    "excerpt"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "remedy": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "refresh",
+                        "upgrade-parent",
+                        "override"
+                      ]
+                    },
+                    "parent": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "string"
+                        },
+                        "range": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "version",
+                        "range"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "command": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "upgradeParentTo": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "version": {
+                              "type": "string"
+                            },
+                            "range": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "majorBump": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "version",
+                            "range",
+                            "majorBump"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "override": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "snippet": {
+                              "type": "string"
+                            },
+                            "note": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "snippet",
+                            "note"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "summary": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "parent",
+                    "command",
+                    "note",
+                    "upgradeParentTo",
+                    "override",
+                    "summary"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "releaseNote": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "github-release",
+                        "changelog"
+                      ]
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "lines": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "matchedBy": {
+                      "type": "string",
+                      "enum": [
+                        "pull-request",
+                        "issue",
+                        "commit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "url",
+                    "lines",
+                    "matchedBy"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "majorUpgrade": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string"
+                    },
+                    "to": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "advice",
+            "reasons",
+            "match",
+            "fix",
+            "fixedIn",
+            "latest",
+            "installedHasFix",
+            "workaround",
+            "remedy",
+            "releaseNote",
+            "majorUpgrade"
+          ],
+          "additionalProperties": false
+        },
+        "search": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "hybrid",
+                "semantic",
+                "lexical",
+                "none"
+              ]
+            },
+            "totalCount": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "attempts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "requested": {
+                    "type": "string",
+                    "enum": [
+                      "hybrid",
+                      "semantic",
+                      "lexical"
+                    ]
+                  },
+                  "q": {
+                    "type": "string"
+                  },
+                  "used": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "hybrid",
+                          "semantic",
+                          "lexical"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "fallbackReasons": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "totalCount": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "error": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "skipped": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "purpose": {
+                    "type": "string",
+                    "enum": [
+                      "message",
+                      "frames"
+                    ]
+                  }
+                },
+                "required": [
+                  "requested",
+                  "q",
+                  "used",
+                  "fallbackReasons",
+                  "totalCount",
+                  "error",
+                  "skipped",
+                  "purpose"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "mode",
+            "totalCount",
+            "attempts"
+          ],
+          "additionalProperties": false
+        },
+        "matches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "title": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "closed"
+                ]
+              },
+              "stateReason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "createdAt": {
+                "type": "string"
+              },
+              "closedAt": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "comments": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "reactions": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "labels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "githubRank": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "similarity": {
+                "type": "object",
+                "properties": {
+                  "score": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "title": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "body": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "verbatim": {
+                    "type": "boolean"
+                  },
+                  "anchor": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "term": {
+                            "type": "string"
+                          },
+                          "found": {
+                            "type": "string",
+                            "enum": [
+                              "title",
+                              "body",
+                              "none"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "term",
+                          "found"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "frames": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "matched": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "of": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "top": {
+                            "type": "boolean"
+                          },
+                          "otherTrace": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "matched",
+                          "of",
+                          "top",
+                          "otherTrace"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "score",
+                  "title",
+                  "body",
+                  "verbatim",
+                  "anchor",
+                  "frames"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
-              "mode",
-              "totalCount",
-              "attempts"
+              "number",
+              "title",
+              "url",
+              "state",
+              "stateReason",
+              "createdAt",
+              "closedAt",
+              "comments",
+              "reactions",
+              "labels",
+              "githubRank",
+              "similarity"
             ],
             "additionalProperties": false
-          },
-          "matches": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "number": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                },
-                "title": {
-                  "type": "string"
-                },
-                "url": {
-                  "type": "string",
-                  "format": "uri"
-                },
-                "state": {
-                  "type": "string",
-                  "enum": [
-                    "open",
-                    "closed"
-                  ]
-                },
-                "stateReason": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "createdAt": {
-                  "type": "string"
-                },
-                "closedAt": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                },
-                "comments": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                },
-                "reactions": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                },
-                "labels": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "githubRank": {
-                  "type": "integer",
-                  "minimum": -9007199254740991,
-                  "maximum": 9007199254740991
-                },
-                "similarity": {
-                  "type": "object",
-                  "properties": {
-                    "score": {
-                      "type": "number",
-                      "minimum": 0,
-                      "maximum": 1
-                    },
-                    "title": {
-                      "type": "number",
-                      "minimum": 0,
-                      "maximum": 1
-                    },
-                    "body": {
-                      "type": "number",
-                      "minimum": 0,
-                      "maximum": 1
-                    },
-                    "verbatim": {
-                      "type": "boolean"
-                    },
-                    "anchor": {
-                      "anyOf": [
-                        {
-                          "type": "object",
-                          "properties": {
-                            "term": {
-                              "type": "string"
-                            },
-                            "found": {
-                              "type": "string",
-                              "enum": [
-                                "title",
-                                "body",
-                                "none"
-                              ]
-                            }
-                          },
-                          "required": [
-                            "term",
-                            "found"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ]
-                    },
-                    "frames": {
-                      "anyOf": [
-                        {
-                          "type": "object",
-                          "properties": {
-                            "matched": {
-                              "type": "integer",
-                              "minimum": -9007199254740991,
-                              "maximum": 9007199254740991
-                            },
-                            "of": {
-                              "type": "integer",
-                              "minimum": -9007199254740991,
-                              "maximum": 9007199254740991
-                            },
-                            "top": {
-                              "type": "boolean"
-                            },
-                            "otherTrace": {
-                              "type": "boolean"
-                            }
-                          },
-                          "required": [
-                            "matched",
-                            "of",
-                            "top",
-                            "otherTrace"
-                          ],
-                          "additionalProperties": false
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ]
-                    }
-                  },
-                  "required": [
-                    "score",
-                    "title",
-                    "body",
-                    "verbatim",
-                    "anchor",
-                    "frames"
-                  ],
-                  "additionalProperties": false
-                }
-              },
-              "required": [
-                "number",
-                "title",
-                "url",
-                "state",
-                "stateReason",
-                "createdAt",
-                "closedAt",
-                "comments",
-                "reactions",
-                "labels",
-                "githubRank",
-                "similarity"
-              ],
-              "additionalProperties": false
-            }
           }
-        },
-        "required": [
-          "repo",
-          "package",
-          "installed",
-          "dependency",
-          "verdict",
-          "search",
-          "matches"
-        ],
-        "additionalProperties": false
-      }
+        }
+      },
+      "required": [
+        "repo",
+        "package",
+        "installed",
+        "dependency",
+        "verdict",
+        "search",
+        "matches"
+      ],
+      "additionalProperties": false
     },
-    "diagnostics": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "level": {
-            "type": "string",
-            "enum": [
-              "info",
-              "warn",
-              "error"
-            ]
-          },
-          "stage": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "tried": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
+    "Diagnostic": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "info",
+            "warn",
+            "error"
+          ]
         },
-        "required": [
-          "level",
-          "stage",
-          "message",
-          "tried"
-        ],
-        "additionalProperties": false
-      }
+        "stage": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "tried": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "level",
+        "stage",
+        "message",
+        "tried"
+      ],
+      "additionalProperties": false
     }
-  },
-  "required": [
-    "schemaVersion",
-    "tool",
-    "input",
-    "lockfile",
-    "auth",
-    "packages",
-    "results",
-    "diagnostics"
-  ],
-  "additionalProperties": false
+  }
 }

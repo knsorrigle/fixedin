@@ -85,8 +85,9 @@ const ERRNO_CODES = new Set([
 ]);
 
 // eslint-disable-next-line no-control-regex
-const ANSI = /\u001b\[[0-9;]*[A-Za-z]/g;
-const FRAME = /^\s*at\s|^\s*[\w$.<>]*@\S+:\d+(:\d+)?\s*$/; // V8 "at …" and Firefox/Safari "fn@file:1:2"
+export const ANSI = /\u001b\[[0-9;]*[A-Za-z]/g;
+// V8 "at …", Firefox/Safari "fn@file:1:2", vitest "❯ fn file:1:2"
+export const FRAME = /^\s*at\s|^\s*[\w$.<>]*@\S+:\d+(:\d+)?\s*$|^\s*❯\s+\S/;
 
 /** A package segment directly after the LAST node_modules/ in a path. */
 const NODE_MODULES_PKG = /node_modules[\\/]+(?!.*node_modules[\\/])((?:@[^\\/\s:()'"]+[\\/]+)?[^\\/\s:()'"]+)/;
@@ -143,12 +144,13 @@ export function pickMessageLine(lines: string[]): string {
   return chosen;
 }
 
-const ERROR_LINE = /(^|\s)(\w*Error|Exception)(\s*\[[\w-]+\])?:(\s*\S|\s*$)/;
-const KNOWN_MESSAGE = /^(Module not found|Failed to resolve|Cannot find (module|package))\b/;
+export const ERROR_LINE = /(^|\s)(\w*Error|Exception)(\s*\[[\w-]+\])?:(\s*\S|\s*$)/;
+export const KNOWN_MESSAGE = /^(Module not found|Failed to resolve|Cannot find (module|package))\b/;
 
 function isDecoration(l: string): boolean {
   return (
     /^[-=─━~^|]+$/.test(l) || // rules and carets
+    /^⎯{3,}/.test(l) || // vitest section rules: "⎯⎯⎯ Failed Tests 2 ⎯⎯⎯"
     /^[>→]?\s*\d+\s*(\||\s)/.test(l) || // code excerpts: "> 3 | import …", "→ 27 const …"
     /^(FAIL|PASS)\s/.test(l) ||
     /^●/.test(l) ||
@@ -266,7 +268,9 @@ export function packageFrame(line: string, name: string): PackageFrame | undefin
   // "at async new Foo.bar [as baz] (…)": the alias in brackets is optional.
   const v8 = l.match(/^\s*at\s+(?:async\s+)?(?:new\s+)?([^\s(]+)(?:\s+\[as ([^\]]+)\])?\s+\(/);
   // "Axios.<computed> [as get]": the computed name is the alias.
-  const fn = v8 ? (v8[2] ? v8[1]!.replace(/<computed>$/, v8[2]) : v8[1]) : l.match(/^\s*([\w$.<>]+)@/)?.[1];
+  const fn = v8
+    ? v8[2] ? v8[1]!.replace(/<computed>$/, v8[2]) : v8[1]
+    : (l.match(/^\s*([\w$.<>]+)@/) ?? l.match(/^\s*❯\s+(\S+)\s+\S+:\d+/))?.[1]; // Firefox / vitest
   // A module's top-level code has no function name.
   const cleanFn = fn?.replace(/^(Object\.<anonymous>|<anonymous>)$/, '');
   return { ...(cleanFn ? { fn: cleanFn } : {}), file: m[1]! };

@@ -9,10 +9,10 @@ import pc from 'picocolors';
 import pkg from '../package.json' with { type: 'json' };
 import { resolveToken } from './github/auth.js';
 import { defaultClient, type NetClient } from './net/client.js';
-import { toReport } from './output/json.js';
-import { formatMarkdown } from './output/markdown.js';
-import { formatDetect, formatDiagnostics, formatNetStats, formatSearches, formatVerdicts } from './output/terminal.js';
-import { run, type RunResult } from './pipeline.js';
+import { toLogReport } from './output/json.js';
+import { formatLogMarkdown } from './output/markdown.js';
+import { formatDetect, formatDiagnostics, formatLogVerdicts, formatNetStats, formatSearches } from './output/terminal.js';
+import { logDiagnostics, runLog, type LogRunResult, type RunResult } from './pipeline.js';
 
 export interface IO {
   stdout: (s: string) => void;
@@ -30,6 +30,7 @@ interface CliOptions {
   json: boolean;
   markdown: boolean;
   limit: number;
+  maxErrors: number;
   repo?: string;
   verbose: boolean;
   cache: boolean;
@@ -42,12 +43,14 @@ interface CliOptions {
  *   1  a released fix exists that you don't have (any FIXED_UPSTREAM_UPGRADE verdict)
  *   2  fixedin couldn't tell: it failed, got bad arguments, or a search failed outright
  * A found fix wins over a partial failure: 1 means "act on this" even if another repo errored.
+ * For a log with several errors, the same rules apply across all of them.
  */
 export const EXIT = { NOTHING_TO_DO: 0, FIX_AVAILABLE: 1, ERROR: 2 } as const;
 
-export function exitCodeFor(result: RunResult): 0 | 1 | 2 {
-  if (result.verdicts.some((v) => v.kind === 'FIXED_UPSTREAM_UPGRADE')) return EXIT.FIX_AVAILABLE;
-  if (result.detect.diagnostics.items.some((d) => d.level === 'error')) return EXIT.ERROR;
+export function exitCodeFor(result: RunResult | LogRunResult): 0 | 1 | 2 {
+  const errors = 'errors' in result ? result.errors : [result];
+  if (errors.some((e) => e.verdicts.some((v) => v.kind === 'FIXED_UPSTREAM_UPGRADE'))) return EXIT.FIX_AVAILABLE;
+  if (errors.some((e) => e.detect.diagnostics.items.some((d) => d.level === 'error'))) return EXIT.ERROR;
   return EXIT.NOTHING_TO_DO;
 }
 
@@ -71,6 +74,7 @@ export async function main(argv: string[], io: IO): Promise<number> {
     .option('--json', 'machine-readable output', false)
     .option('--markdown', 'GitHub-flavored markdown, for PR comments and job summaries', false)
     .option('--limit <n>', 'max issues to show per repo', parsePositiveInt, 5)
+    .option('--max-errors <n>', 'max distinct errors to check in a log with several', parsePositiveInt, 5)
     .option('--repo <owner/name>', 'search this GitHub repo instead of detecting packages')
     .option('-v, --verbose', 'show every attempt, cache hits and rate-limit quota', false)
     .option('--no-cache', `don't read or write the disk cache (~/.cache/fixedin)`)
@@ -98,9 +102,9 @@ export async function main(argv: string[], io: IO): Promise<number> {
       // Token from io.env (not process.env), so main() is self-contained and tests
       // never depend on whoever is logged into `gh` on the machine running them.
       const auth = await resolveToken(io.env);
-      const result = await run(input, { cwd, client, limit: opts.limit, auth, ...(opts.repo ? { repo: opts.repo } : {}) });
+      const result = await runLog(input, { cwd, client, limit: opts.limit, maxErrors: opts.maxErrors, auth, ...(opts.repo ? { repo: opts.repo } : {}) });
       const stats = client.stats;
-      for (const e of stats?.cache?.errors ?? []) result.detect.diagnostics.warn('net', `Cache: ${e}`);
+      for (const e of stats?.cache?.errors ?? []) result.errors[0]!.detect.diagnostics.warn('net', `Cache: ${e}`);
 
       if (opts.json && opts.markdown) {
         io.stderr('--json and --markdown are mutually exclusive.\n');
@@ -108,19 +112,21 @@ export async function main(argv: string[], io: IO): Promise<number> {
         return;
       }
       if (opts.markdown) {
-        io.stdout(formatMarkdown(result, pkg.version) + '\n');
-        const diag = formatDiagnostics(result.detect.diagnostics.items, opts.verbose);
+        io.stdout(formatLogMarkdown(result, pkg.version) + '\n');
+        const diag = formatDiagnostics(logDiagnostics(result), opts.verbose);
         if (diag) io.stderr('\n' + diag + '\n');
       } else if (opts.json) {
-        io.stdout(JSON.stringify(toReport(result, pkg.version), null, 2) + '\n');
+        io.stdout(JSON.stringify(toLogReport(result, pkg.version), null, 2) + '\n');
         if (opts.verbose) io.stderr(formatNetStats(stats) + '\n');
       } else {
         if (opts.verbose) {
-          io.stdout(formatDetect(result.detect, cwd) + '\n');
-          io.stdout(formatSearches(result) + '\n');
+          for (const e of result.errors) {
+            io.stdout(formatDetect(e.detect, cwd) + '\n');
+            io.stdout(formatSearches(e) + '\n');
+          }
         }
-        io.stdout(formatVerdicts(result, cwd, opts.limit) + '\n');
-        const diag = formatDiagnostics(result.detect.diagnostics.items, opts.verbose);
+        io.stdout(formatLogVerdicts(result, cwd, opts.limit) + '\n');
+        const diag = formatDiagnostics(logDiagnostics(result), opts.verbose);
         if (diag) io.stderr('\n' + diag + '\n');
         if (opts.verbose) io.stderr(formatNetStats(stats) + '\n');
       }

@@ -1,0 +1,74 @@
+ FAIL  src/__tests__/api.test.ts
+  ● Test suite failed to run
+
+    SyntaxError: Cannot use import statement outside a module
+
+      1 | import { describe } from '@jest/globals';
+    > 2 | import { nanoid } from 'nanoid';
+        | ^
+
+      at Runtime.createScriptFromCode (node_modules/jest-runtime/build/index.js:1505:14)
+      at Object.<anonymous> (node_modules/nanoid/index.browser.js:1:1)
+      at Object.<anonymous> (src/__tests__/api.test.ts:2:1)
+      at TestScheduler.scheduleTests (node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (node_modules/@jest/core/build/runJest.js:404:19)
+
+ FAIL  src/orders.test.ts
+  ● orders › lists orders
+
+    TypeError: Cannot read properties of undefined (reading 'headers')
+
+      at settle (/Users/dev/shop-api/node_modules/axios/lib/core/settle.js:19:34)
+      at IncomingMessage.handleStreamEnd (/Users/dev/shop-api/node_modules/axios/lib/adapters/http.js:572:11)
+      at IncomingMessage.emit (node:events:531:35)
+      at endReadableNT (node:internal/streams/readable:1696:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+      at Axios.request (/Users/dev/shop-api/node_modules/axios/lib/core/Axios.js:45:41)
+      at async fetchOrders (/Users/dev/shop-api/src/orders.ts:14:20)
+
+  ● orders › paginates
+
+    TypeError: Cannot read properties of undefined (reading 'headers')
+
+      at settle (/Users/dev/shop-api/node_modules/axios/lib/core/settle.js:19:34)
+      at IncomingMessage.handleStreamEnd (/Users/dev/shop-api/node_modules/axios/lib/adapters/http.js:572:11)
+      at IncomingMessage.emit (node:events:531:35)
+      at endReadableNT (node:internal/streams/readable:1696:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+      at Axios.request (/Users/dev/shop-api/node_modules/axios/lib/core/Axios.js:45:41)
+      at async fetchOrders (/Users/dev/shop-api/src/orders.ts:14:20)
+
+ FAIL  src/signup.test.ts
+  ● signup › rejects a duplicate email
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.user.create()` invocation in
+    /home/app/src/routes/signup.ts:27:36
+
+      24 const hashed = await bcrypt.hash(password, 10)
+    → 27 const user = await prisma.user.create(
+    Unique constraint failed on the fields: (`email`)
+      at In.handleRequestError (/home/app/node_modules/@prisma/client/runtime/library.js:121:7753)
+      at In.handleAndLogRequestError (/home/app/node_modules/@prisma/client/runtime/library.js:121:7061)
+      at In.request (/home/app/node_modules/@prisma/client/runtime/library.js:121:6745)
+      at async l (/home/app/node_modules/@prisma/client/runtime/library.js:130:9633)
+      at async signup (/home/app/src/routes/signup.ts:27:18) {
+        code: 'P2002',
+        clientVersion: '5.7.1',
+        meta: { modelName: 'User', target: [ 'email' ] }
+      }
+
+  ● totals › adds tax
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 108
+    Received: 107.99999999999999
+
+      at Object.<anonymous> (src/totals.test.ts:9:31)
+
+Test Suites: 3 failed, 2 passed, 5 total
+Tests:       4 failed, 11 passed, 15 total
+Snapshots:   0 total
+Time:        3.412 s
+Ran all test suites.

@@ -1,0 +1,31 @@
+> shop@1.0.0 dev
+> node server.js & vite
+
+Server listening on http://localhost:3000
+GET /orders 500 12ms
+TypeError: Cannot read properties of undefined (reading 'headers')
+    at settle (/Users/dev/shop-api/node_modules/axios/lib/core/settle.js:19:34)
+    at IncomingMessage.handleStreamEnd (/Users/dev/shop-api/node_modules/axios/lib/adapters/http.js:572:11)
+    at IncomingMessage.emit (node:events:531:35)
+    at endReadableNT (node:internal/streams/readable:1696:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+    at Axios.request (/Users/dev/shop-api/node_modules/axios/lib/core/Axios.js:45:41)
+    at async fetchOrders (/Users/dev/shop-api/src/orders.ts:14:20)
+GET /orders?page=2 500 9ms
+TypeError: Cannot read properties of undefined (reading 'headers')
+    at settle (/Users/dev/shop-api/node_modules/axios/lib/core/settle.js:19:34)
+    at IncomingMessage.handleStreamEnd (/Users/dev/shop-api/node_modules/axios/lib/adapters/http.js:572:11)
+    at IncomingMessage.emit (node:events:531:35)
+    at endReadableNT (node:internal/streams/readable:1696:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+    at Axios.request (/Users/dev/shop-api/node_modules/axios/lib/core/Axios.js:45:41)
+    at async fetchOrders (/Users/dev/shop-api/src/orders.ts:14:20)
+
+failed to load config from /Users/kim/app/vite.config.ts
+error when starting dev server:
+Error [ERR_REQUIRE_ESM]: require() of ES Module /Users/kim/app/node_modules/@vitejs/plugin-react/dist/index.mjs not supported.
+Instead change the require of index.mjs in /Users/kim/app/vite.config.ts.timestamp-1700000000000-7c1e9a2b3d4f5.mjs to a dynamic import() which is available in all CommonJS modules.
+    at Object.<anonymous> (/Users/kim/app/vite.config.ts.timestamp-1700000000000-7c1e9a2b3d4f5.mjs:5:28)
+    at loadConfigFromBundledFile (file:///Users/kim/app/node_modules/vite/dist/node/chunks/dep-8f5c9b2e.js:66654:15)
+    at async loadConfigFromFile (file:///Users/kim/app/node_modules/vite/dist/node/chunks/dep-8f5c9b2e.js:66493:24)
+    at async createServer (file:///Users/kim/app/node_modules/vite/dist/node/chunks/dep-8f5c9b2e.js:66090:28)
