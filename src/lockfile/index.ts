@@ -4,12 +4,12 @@
  * Implemented: package-lock.json / npm-shrinkwrap.json (lockfileVersion 1, 2 & 3),
  *              pnpm-lock.yaml (lockfileVersion 5.x, 6.0, 9.0 — see ./pnpm.ts),
  *              yarn.lock (classic v1 and Berry v2+ — see ./yarn.ts),
- *              bun.lock (lockfileVersion 0–2 — see ./bun.ts; binary bun.lockb is detected, not read),
+ *              bun.lock (lockfileVersion 0–2) and bun.lockb (printed by Bun as a yarn v1 lockfile) — see ./bun.ts,
  *              deno.lock (versions 3–5, npm packages only — see ./deno.ts).
  * Fallback:    node_modules/<pkg>/package.json when no supported lockfile exists.
  */
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { readPnpmLock } from './pnpm.js';
 import { readYarnLock } from './yarn.js';
 import { readBunLock } from './bun.js';
@@ -105,11 +105,11 @@ export function locateLockfile(cwd: string): { found?: LocatedLockfile; tried: s
   }
 }
 
-/** `cwd` picks the workspace (which package you're running from) in pnpm, yarn, bun and deno lockfiles. */
+/** `cwd` picks the workspace (which package you're running from); every lockfile kind supports it. */
 export function openLockfile(loc: LocatedLockfile, cwd?: string): LockfileReader {
   switch (loc.kind) {
     case 'package-lock':
-      return readPackageLock(loc.path);
+      return readPackageLock(loc.path, cwd);
     case 'pnpm':
       return readPnpmLock(loc.path, cwd);
     case 'yarn':
@@ -153,14 +153,14 @@ interface PackageLockJson {
   dependencies?: Record<string, V1Dependency>;
 }
 
-export function readPackageLock(path: string): LockfileReader {
+export function readPackageLock(path: string, cwd?: string): LockfileReader {
   let json: PackageLockJson;
   try {
     json = JSON.parse(readFileSync(path, 'utf8')) as PackageLockJson;
   } catch (err) {
     throw new LockfileError(`Could not parse ${path}: ${(err as Error).message}`, [path]);
   }
-  return parsePackageLock(json, path);
+  return parsePackageLock(json, path, cwd);
 }
 
 /**
@@ -198,7 +198,12 @@ export function flattenV1(deps: Record<string, V1Dependency>, lockDir: string, p
   return out;
 }
 
-export function parsePackageLock(json: PackageLockJson, path: string): LockfileReader {
+/**
+ * With `cwd` inside an npm workspace package ("packages/web"), that package's
+ * own copy ("packages/web/node_modules/axios") is the one it loads, so it
+ * comes first and counts as top-level, as the importer's copy does for pnpm.
+ */
+export function parsePackageLock(json: PackageLockJson, path: string, cwd?: string): LockfileReader {
   const v = json.lockfileVersion;
   let packages: PackagesMap;
   if (json.packages) {
@@ -214,6 +219,11 @@ export function parsePackageLock(json: PackageLockJson, path: string): LockfileR
       [path],
     );
   }
+  // The deepest workspace folder containing cwd ("" and install locations aren't workspaces).
+  const rel = cwd ? relative(dirname(path), resolve(cwd)).split(sep).join('/') : '';
+  const workspace = Object.keys(packages)
+    .filter((k) => k && !k.includes('node_modules/') && (rel === k || rel.startsWith(`${k}/`)))
+    .sort((a, b) => b.length - a.length)[0];
   return {
     kind: 'package-lock',
     file: path,
@@ -230,8 +240,11 @@ export function parsePackageLock(json: PackageLockJson, path: string): LockfileR
         // Workspace symlink: `"node_modules/pkg": { "resolved": "packages/pkg", "link": true }`
         if (entry.link && entry.resolved) version = packages[entry.resolved]?.version;
         if (!version) continue;
-        out.push({ name, version, location, topLevel: location === `node_modules/${folder}`, source: path });
+        const top = workspace ? `${workspace}/node_modules/${folder}` : `node_modules/${folder}`;
+        out.push({ name, version, location, topLevel: location === top, source: path });
       }
+      // A workspace without its own copy loads the hoisted one.
+      if (workspace && !out.some((c) => c.topLevel)) for (const c of out) c.topLevel = c.location.startsWith('node_modules/') && !c.location.includes('/node_modules/');
       return out.sort((a, b) => Number(b.topLevel) - Number(a.topLevel) || a.location.length - b.location.length);
     },
     dependents(name, version) {

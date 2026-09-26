@@ -17,7 +17,10 @@ import { traceFix, type TraceResult } from './trace/index.js';
 import { crossesMajor, decideFixed, MATCH_THRESHOLD, pickWorkaround, type IssueComment, type Verdict } from './verdict/index.js';
 import type { Diagnostic, Diagnostics } from './diagnostics.js';
 import { parseError } from './parse/index.js';
+import { dirname, join } from 'node:path';
+import { locateLockfile } from './lockfile/index.js';
 import { demux, type PrefixScheme } from './parse/demux.js';
+import { listWorkspaces, workspaceForLabel, type WorkspacePackage } from './workspaces.js';
 import { isErrorStart, splitErrors, type ErrorBlock } from './parse/split.js';
 import type { GitHub } from './github/client.js';
 
@@ -114,7 +117,23 @@ export async function runLog(input: string, opts: LogRunOptions): Promise<LogRun
   const { scheme, streams } = demux(input);
   const prefixes = scheme ? { prefixes: scheme } : {};
 
-  type Distinct = { block: ErrorBlock; stream: (typeof streams)[number]; query: string; lines: number[]; sources: Set<string>; skip?: SkipReason };
+  // A labelled line names the workspace package that printed it: read that package's versions.
+  const root = (() => {
+    const { found } = locateLockfile(opts.cwd);
+    return found ? dirname(found.path) : opts.cwd;
+  })();
+  const workspaces = scheme ? listWorkspaces(root) : [];
+  const workspaceOf = (label: string | null) => (scheme && label ? workspaceForLabel(label, scheme, workspaces) : undefined);
+
+  type Distinct = {
+    block: ErrorBlock;
+    stream: (typeof streams)[number];
+    query: string;
+    lines: number[];
+    sources: Set<string>;
+    workspace?: WorkspacePackage;
+    skip?: SkipReason;
+  };
   const distinct = new Map<string, Distinct>();
   for (const stream of streams) {
     for (const block of splitErrors(stream.text)) {
@@ -125,20 +144,36 @@ export async function runLog(input: string, opts: LogRunOptions): Promise<LogRun
       const line = stream.lines[block.line - 1] ?? block.line;
       // Test runners' own frames (jest, vitest) are in nearly every failure; they don't make it an upstream bug.
       const culprit = parsed.packages.find((p) => !p.lowSignal);
-      const key = `${parsed.query}\u0000${culprit?.name ?? ''}`;
+      const workspace = workspaceOf(stream.label);
+      // Two packages can have different versions installed: the same error in each is checked for each.
+      const key = `${parsed.query}\u0000${culprit?.name ?? ''}\u0000${workspace?.dir ?? ''}`;
       const seen = distinct.get(key);
       if (seen) {
         seen.lines.push(line);
         if (stream.label) seen.sources.add(stream.label);
       } else {
         const skip = !isErrorStart(parsed.messageLine) ? 'not-an-error' : !culprit && !opts.repo ? 'no-package' : undefined;
-        distinct.set(key, { block, stream, query: parsed.query, lines: [line], sources: new Set(stream.label ? [stream.label] : []), ...(skip ? { skip } : {}) });
+        distinct.set(key, {
+          block,
+          stream,
+          query: parsed.query,
+          lines: [line],
+          sources: new Set(stream.label ? [stream.label] : []),
+          ...(workspace ? { workspace } : {}),
+          ...(skip ? { skip } : {}),
+        });
       }
     }
   }
   // In input order, whichever stream each came from.
   const all = [...distinct.values()].map((e) => ({ ...e, lines: e.lines.sort((a, b) => a - b) })).sort((a, b) => a.lines[0]! - b.lines[0]!);
   const source = (e: Distinct) => (e.sources.size ? { source: [...e.sources].join(', ') } : {});
+  const runOne = async (e: Distinct | undefined, text: string): Promise<RunResult> => {
+    if (!e?.workspace) return run(text, { ...opts, auth });
+    const r = await run(text, { ...opts, auth, cwd: join(root, e.workspace.dir) });
+    r.detect.diagnostics.info('lockfile', `Versions from ${e.workspace.name ?? e.workspace.dir} (${e.workspace.dir}): the error came from ${[...e.sources].join(', ')}.`);
+    return r;
+  };
   const checkable = all.filter((e) => !e.skip);
 
   // A single error: the whole input (or, with prefixes, its whole stream) as one, like run().
@@ -146,7 +181,7 @@ export async function runLog(input: string, opts: LogRunOptions): Promise<LogRun
     const only = checkable[0];
     const text = !scheme ? input : only ? only.stream.text : streams.map((s) => s.text).join('\n');
     return {
-      errors: [{ ...(await run(text, { ...opts, auth })), lines: only && scheme ? only.lines : [1], ...(only ? source(only) : {}) }],
+      errors: [{ ...(await runOne(only, text)), lines: only && scheme ? only.lines : [1], ...(only ? source(only) : {}) }],
       skipped: [],
       auth: { source: auth.source },
       ...prefixes,
@@ -156,7 +191,7 @@ export async function runLog(input: string, opts: LogRunOptions): Promise<LogRun
   const max = opts.maxErrors ?? DEFAULT_MAX_ERRORS;
   const errors: ErrorRun[] = [];
   // Sequential, like the repos within one error: search quotas are per minute.
-  for (const e of checkable.slice(0, max)) errors.push({ ...(await run(e.block.text, { ...opts, auth })), lines: e.lines, ...source(e) });
+  for (const e of checkable.slice(0, max)) errors.push({ ...(await runOne(e, e.block.text)), lines: e.lines, ...source(e) });
   return {
     errors,
     skipped: [
